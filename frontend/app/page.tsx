@@ -1,65 +1,284 @@
-import Image from "next/image";
+import GuestNav from "@/components/layout/GuestNav";
+import Footer from "@/components/layout/Footer";
+import {
+  Wallet,
+  TrendingUp,
+  Shield,
+  Smartphone,
+  Target,
+  PieChart,
+  CheckCircle,
+} from "lucide-react";
+import Link from "next/link";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-white">
+      <GuestNav />
+
+      {/* Hero Section */}
+      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+            Quản lý chi tiêu <span className="text-blue-600">thông minh</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            MoneyTrack giúp bạn kiểm soát tài chính cá nhân một cách dễ dàng.
+            Theo dõi thu chi, đặt ngân sách và đạt được mục tiêu tài chính của
+            bạn.
           </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <Link
+              href="/register"
+              className="px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold text-lg shadow-lg"
+            >
+              Bắt đầu miễn phí
+            </Link>
+            <Link
+              href="/login"
+              className="px-8 py-4 bg-white text-gray-800 rounded-lg hover:bg-gray-50 transition font-semibold text-lg border-2 border-gray-200"
+            >
+              Đăng nhập
+            </Link>
+          </div>
+
+          {/* Hero Image/Illustration */}
+          <div className="mt-16">
+            <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-8 max-w-5xl mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+                  <Wallet className="w-8 h-8 mb-2" />
+                  <p className="text-sm font-medium">Tổng tài sản</p>
+                  <p className="text-2xl font-bold mt-2">32.470.000đ</p>
+                </div>
+                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
+                  <TrendingUp className="w-8 h-8 mb-2" />
+                  <p className="text-sm font-medium">Thu nhập</p>
+                  <p className="text-2xl font-bold mt-2">15.000.000đ</p>
+                </div>
+                <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white sm:col-span-2 lg:col-span-1">
+                  <Target className="w-8 h-8 mb-2" />
+                  <p className="text-sm font-medium">Chi tiêu</p>
+                  <p className="text-2xl font-bold mt-2">10.400.000đ</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Tính năng nổi bật
+            </h2>
+            <p className="text-xl text-gray-600">
+              Tất cả những gì bạn cần để quản lý tài chính hiệu quả
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                icon: PieChart,
+                title: "Theo dõi chi tiêu",
+                description:
+                  "Ghi chép và phân loại mọi khoản chi tiêu của bạn một cách tự động và chính xác.",
+                color: "bg-blue-100 text-blue-600",
+              },
+              {
+                icon: Target,
+                title: "Đặt ngân sách",
+                description:
+                  "Thiết lập ngân sách cho từng danh mục và nhận cảnh báo khi vượt mức.",
+                color: "bg-purple-100 text-purple-600",
+              },
+              {
+                icon: TrendingUp,
+                title: "Báo cáo chi tiết",
+                description:
+                  "Xem biểu đồ và báo cáo trực quan về tình hình tài chính của bạn.",
+                color: "bg-green-100 text-green-600",
+              },
+              {
+                icon: Wallet,
+                title: "Quản lý tài khoản",
+                description:
+                  "Theo dõi số dư của nhiều tài khoản ngân hàng, ví điện tử trong một nơi.",
+                color: "bg-orange-100 text-orange-600",
+              },
+              {
+                icon: Shield,
+                title: "Bảo mật cao",
+                description:
+                  "Dữ liệu của bạn được mã hóa và bảo vệ với công nghệ bảo mật hiện đại.",
+                color: "bg-red-100 text-red-600",
+              },
+              {
+                icon: Smartphone,
+                title: "Đa nền tảng",
+                description:
+                  "Truy cập từ mọi thiết bị - máy tính, tablet, điện thoại. Dữ liệu luôn đồng bộ.",
+                color: "bg-indigo-100 text-indigo-600",
+              },
+            ].map((feature, idx) => (
+              <div
+                key={idx}
+                className="bg-white rounded-xl p-6 border-2 border-gray-100 hover:border-blue-200 hover:shadow-lg transition"
+              >
+                <div
+                  className={`w-12 h-12 rounded-lg ${feature.color} flex items-center justify-center mb-4`}
+                >
+                  <feature.icon className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-600">{feature.description}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </main>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Bảng giá đơn giản
+            </h2>
+            <p className="text-xl text-gray-600">
+              Chọn gói phù hợp với nhu cầu của bạn
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Free Plan */}
+            <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-blue-300 transition">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Miễn phí
+              </h3>
+              <div className="mb-6">
+                <span className="text-4xl font-bold text-gray-900">0đ</span>
+                <span className="text-gray-600">/tháng</span>
+              </div>
+              <ul className="space-y-4 mb-8">
+                {[
+                  "Theo dõi chi tiêu cơ bản",
+                  "Tối đa 3 tài khoản",
+                  "Báo cáo tháng",
+                  "Hỗ trợ email",
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span className="text-gray-700">{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/register"
+                className="block w-full text-center px-6 py-3 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition font-semibold"
+              >
+                Bắt đầu
+              </Link>
+            </div>
+
+            {/* Premium Plan */}
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-8 border-2 border-blue-600 shadow-xl transform scale-105">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-2xl font-bold text-white">Premium</h3>
+                <span className="px-3 py-1 bg-yellow-400 text-yellow-900 rounded-full text-xs font-bold">
+                  PHỔ BIẾN
+                </span>
+              </div>
+              <div className="mb-6">
+                <span className="text-4xl font-bold text-white">99.000đ</span>
+                <span className="text-blue-100">/tháng</span>
+              </div>
+              <ul className="space-y-4 mb-8">
+                {[
+                  "Không giới hạn tài khoản",
+                  "Báo cáo chi tiết",
+                  "Đặt ngân sách nâng cao",
+                  "Xuất dữ liệu Excel",
+                  "Hỗ trợ ưu tiên",
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-white" />
+                    <span className="text-white">{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/register"
+                className="block w-full text-center px-6 py-3 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition font-semibold"
+              >
+                Nâng cấp ngay
+              </Link>
+            </div>
+
+            {/* Business Plan */}
+            <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-blue-300 transition">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Doanh nghiệp
+              </h3>
+              <div className="mb-6">
+                <span className="text-4xl font-bold text-gray-900">
+                  299.000đ
+                </span>
+                <span className="text-gray-600">/tháng</span>
+              </div>
+              <ul className="space-y-4 mb-8">
+                {[
+                  "Tất cả tính năng Premium",
+                  "Quản lý đa người dùng",
+                  "API tích hợp",
+                  "Báo cáo tùy chỉnh",
+                  "Hỗ trợ 24/7",
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span className="text-gray-700">{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/register"
+                className="block w-full text-center px-6 py-3 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition font-semibold"
+              >
+                Liên hệ
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section
+        id="about"
+        className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 to-indigo-700"
+      >
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl font-bold text-white mb-4">
+            Sẵn sàng kiểm soát tài chính của bạn?
+          </h2>
+          <p className="text-xl text-blue-100 mb-8">
+            Hàng nghìn người đã tin tưởng sử dụng MoneyTrack để quản lý tài
+            chính cá nhân. Tham gia cùng chúng tôi ngay hôm nay!
+          </p>
+          <Link
+            href="/register"
+            className="inline-block px-8 py-4 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition font-semibold text-lg shadow-lg"
+          >
+            Đăng ký miễn phí ngay
+          </Link>
+        </div>
+      </section>
+
+      <Footer />
     </div>
   );
 }
