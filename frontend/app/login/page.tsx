@@ -1,19 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Wallet, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginFormData } from "@/lib/validations";
+import { useSearchParams } from "next/navigation";
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const hasShownToast = useRef(false);
 
   const {
     register,
@@ -24,17 +27,24 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
-  // Load saved email on mount
+  // Load saved email on mount and check for registration success
   useEffect(() => {
     const savedEmail = localStorage.getItem("rememberedEmail");
     if (savedEmail) {
       setValue("email", savedEmail);
       setRememberMe(true);
     }
-  }, [setValue]);
+
+    // Check if redirected from registration (only show once)
+    if (searchParams.get("registered") === "true" && !hasShownToast.current) {
+      hasShownToast.current = true;
+      toast.success(
+        "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản."
+      );
+    }
+  }, [setValue, searchParams]);
 
   const onSubmit = async (data: LoginFormData) => {
-    setError("");
     setIsLoading(true);
 
     try {
@@ -46,9 +56,23 @@ export default function LoginPage() {
       }
 
       await login(data.email, data.password);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_err) {
-      setError("Email hoặc mật khẩu không đúng");
+    } catch (err: unknown) {
+      // Handle specific Supabase errors
+      if (err && typeof err === "object" && "message" in err) {
+        const errorMessage = (err as { message: string }).message;
+
+        if (errorMessage.includes("Invalid login credentials")) {
+          toast.error("Email hoặc mật khẩu không đúng");
+        } else if (errorMessage.includes("Email not confirmed")) {
+          toast.error("Vui lòng xác thực email trước khi đăng nhập", {
+            duration: 6000,
+          });
+        } else {
+          toast.error("Đăng nhập thất bại. Vui lòng thử lại!");
+        }
+      } else {
+        toast.error("Email hoặc mật khẩu không đúng");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -69,12 +93,6 @@ export default function LoginPage() {
 
         {/* Login Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-              {error}
-            </div>
-          )}
-
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Email */}
             <div>

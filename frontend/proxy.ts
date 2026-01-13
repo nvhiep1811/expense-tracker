@@ -3,11 +3,11 @@ import { NextResponse, type NextRequest } from "next/server";
 const protectedRoutes = ["/dashboard"];
 const authRoutes = ["/login", "/register"];
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const token = request.cookies.get("auth-token")?.value;
-  const isAuthenticated = Boolean(token);
+  const accessToken = request.cookies.get("access_token")?.value;
+  const isAuthenticated = !!accessToken;
 
   if (pathname === "/" && isAuthenticated) {
     return NextResponse.redirect(new URL("/dashboard", request.url));

@@ -1,4 +1,4 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { CheckEmailDto, RegisterDto, LoginDto } from './dto/auth.dto';
@@ -40,7 +40,7 @@ export class AuthService {
 
     return {
       exists,
-      message: exists ? 'Email đã được đăng ký' : 'Email chưa được đăng ký',
+      message: exists ? 'Email đã được đăng ký.' : 'Email chưa được đăng ký.',
     };
   }
 
@@ -50,7 +50,7 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     const { email, password, full_name } = registerDto;
 
-    const { data, error } = await this.supabase.auth.signUp({
+    await this.supabase.auth.signUp({
       email,
       password,
       options: {
@@ -60,17 +60,9 @@ export class AuthService {
       },
     });
 
-    if (error) {
-      if (error.message.includes('already registered')) {
-        throw new ConflictException('Email đã được đăng ký');
-      }
-      throw error;
-    }
-
     return {
-      user: data.user,
-      session: data.session,
-      message: 'Đăng ký thành công',
+      message:
+        'Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản của bạn.',
     };
   }
 
@@ -86,13 +78,15 @@ export class AuthService {
     });
 
     if (error) {
-      throw error;
+      return {
+        message: error.message,
+      };
     }
 
     return {
       user: data.user,
       session: data.session,
-      message: 'Đăng nhập thành công',
+      message: 'Đăng nhập thành công!',
     };
   }
 
@@ -107,7 +101,7 @@ export class AuthService {
     }
 
     return {
-      message: 'Đăng xuất thành công',
+      message: 'Đã đăng xuất thành công!',
     };
   }
 }

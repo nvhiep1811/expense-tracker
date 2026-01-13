@@ -8,13 +8,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type RegisterFormData } from "@/lib/validations";
 import PasswordStrengthMeter from "@/components/ui/PasswordStrengthMeter";
+import toast from "react-hot-toast";
 
 export default function RegisterPage() {
   const { register: registerUser } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const {
     register,
@@ -28,14 +28,27 @@ export default function RegisterPage() {
   const password = watch("password", "");
 
   const onSubmit = async (data: RegisterFormData) => {
-    setError("");
     setIsLoading(true);
 
     try {
       await registerUser(data.name, data.email, data.password);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_err) {
-      setError("Đăng ký thất bại. Vui lòng thử lại!");
+    } catch (err: unknown) {
+      // Handle specific Supabase errors
+      if (err && typeof err === "object" && "message" in err) {
+        const errorMessage = (err as { message: string }).message;
+
+        if (errorMessage.includes("already registered")) {
+          toast.error("Email này đã được đăng ký. Vui lòng đăng nhập!");
+        } else if (errorMessage.includes("invalid email")) {
+          toast.error("Email không hợp lệ. Vui lòng kiểm tra lại!");
+        } else if (errorMessage.includes("password")) {
+          toast.error("Mật khẩu không đủ mạnh. Vui lòng thử mật khẩu khác!");
+        } else {
+          toast.error("Đăng ký thất bại. Vui lòng thử lại!");
+        }
+      } else {
+        toast.error("Đăng ký thất bại. Vui lòng thử lại!");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -56,12 +69,6 @@ export default function RegisterPage() {
 
         {/* Register Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-              {error}
-            </div>
-          )}
-
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Name */}
             <div>
