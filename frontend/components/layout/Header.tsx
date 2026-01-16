@@ -14,25 +14,25 @@ export default function Header({
   const { user, logout } = useAuth();
 
   return (
-    <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
+    <div className="bg-header-bg border-b border-header-border px-4 sm:px-6 lg:px-8 py-4">
       <div className="flex items-center justify-between">
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-800 truncate">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">
             {title}
           </h1>
           {subtitle && (
-            <p className="text-xs sm:text-sm text-gray-500 mt-1 truncate">
+            <p className="text-xs sm:text-sm text-muted-text mt-1 truncate">
               {subtitle}
             </p>
           )}
         </div>
         <div className="flex items-center space-x-2 sm:space-x-4">
-          <button className="relative p-2 text-gray-400 hover:text-gray-600">
+          <button className="relative p-2 text-muted-text hover:text-foreground">
             <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
             <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
           </button>
-          <div className="flex items-center space-x-2 sm:space-x-3 pl-2 sm:pl-4 border-l border-gray-200">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center">
+          <div className="flex items-center space-x-2 sm:space-x-3 pl-2 sm:pl-4 border-l border-header-border">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
               {user?.avatarUrl ? (
                 <Image
                   src={user.avatarUrl || ""}
@@ -43,20 +43,20 @@ export default function Header({
                   unoptimized
                 />
               ) : (
-                <span className="text-sm sm:text-base text-blue-600 font-semibold">
+                <span className="text-sm sm:text-base text-blue-600 dark:text-blue-400 font-semibold">
                   {user?.name?.charAt(0).toUpperCase() || "U"}
                 </span>
               )}
             </div>
             <div className="hidden sm:block">
-              <p className="text-sm font-medium text-gray-800">
+              <p className="text-sm font-medium text-foreground">
                 {user?.name || "User"}
               </p>
-              <p className="text-xs text-gray-500">Premium</p>
+              <p className="text-xs text-muted-text">Premium</p>
             </div>
             <button
               onClick={logout}
-              className="p-2 text-gray-400 hover:text-red-600 transition cursor-pointer"
+              className="p-2 text-muted-text hover:text-red-600 dark:hover:text-red-400 transition cursor-pointer"
               title="Đăng xuất"
             >
               <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />

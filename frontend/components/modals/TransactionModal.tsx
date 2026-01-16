@@ -38,13 +38,13 @@ export default function TransactionModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-md w-full p-6">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-card-bg rounded-xl max-w-md w-full p-6 border border-card-border">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">Thêm giao dịch</h2>
+          <h2 className="text-2xl font-bold text-foreground">Thêm giao dịch</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-muted-text hover:text-foreground"
           >
             <X className="w-6 h-6" />
           </button>
@@ -53,14 +53,14 @@ export default function TransactionModal({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Loại giao dịch
             </label>
             <select
               {...register("type")}
               className={`w-full px-4 py-2 border ${
-                errors.type ? "border-red-500" : "border-gray-300"
-              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                errors.type ? "border-red-500" : "border-input-border"
+              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
             >
               <option value="expense">Chi tiêu</option>
               <option value="income">Thu nhập</option>
@@ -72,15 +72,15 @@ export default function TransactionModal({
 
           {/* Amount */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Số tiền
             </label>
             <input
               type="number"
               {...register("amount", { valueAsNumber: true })}
               className={`w-full px-4 py-2 border ${
-                errors.amount ? "border-red-500" : "border-gray-300"
-              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                errors.amount ? "border-red-500" : "border-input-border"
+              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
               placeholder="0"
             />
             {errors.amount && (
@@ -92,14 +92,14 @@ export default function TransactionModal({
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Danh mục
             </label>
             <select
               {...register("category")}
               className={`w-full px-4 py-2 border ${
-                errors.category ? "border-red-500" : "border-gray-300"
-              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                errors.category ? "border-red-500" : "border-input-border"
+              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
             >
               <option value="">Chọn danh mục</option>
               <option value="Ăn uống">Ăn uống</option>
@@ -118,14 +118,14 @@ export default function TransactionModal({
 
           {/* Account */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Tài khoản
             </label>
             <select
               {...register("account")}
               className={`w-full px-4 py-2 border ${
-                errors.account ? "border-red-500" : "border-gray-300"
-              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                errors.account ? "border-red-500" : "border-input-border"
+              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
             >
               <option value="">Chọn tài khoản</option>
               <option value="Ví tiền mặt">Ví tiền mặt</option>
@@ -143,15 +143,15 @@ export default function TransactionModal({
 
           {/* Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Ngày
             </label>
             <input
               type="date"
               {...register("date")}
               className={`w-full px-4 py-2 border ${
-                errors.date ? "border-red-500" : "border-gray-300"
-              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                errors.date ? "border-red-500" : "border-input-border"
+              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
             />
             {errors.date && (
               <p className="mt-1 text-sm text-red-600">{errors.date.message}</p>
@@ -160,15 +160,15 @@ export default function TransactionModal({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Mô tả (không bắt buộc)
             </label>
             <textarea
               {...register("description")}
               rows={3}
               className={`w-full px-4 py-2 border ${
-                errors.description ? "border-red-500" : "border-gray-300"
-              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                errors.description ? "border-red-500" : "border-input-border"
+              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
               placeholder="Nhập mô tả..."
             />
             {errors.description && (
@@ -183,7 +183,7 @@ export default function TransactionModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="flex-1 px-4 py-2 border border-card-border rounded-lg hover:bg-hover-bg text-foreground"
             >
               Hủy
             </button>

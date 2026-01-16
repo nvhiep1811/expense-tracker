@@ -39,13 +39,13 @@ export default function AccountModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-md w-full p-6">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-card-bg rounded-xl max-w-md w-full p-6 border border-card-border">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">Thêm tài khoản</h2>
+          <h2 className="text-2xl font-bold text-foreground">Thêm tài khoản</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-muted-text hover:text-foreground"
           >
             <X className="w-6 h-6" />
           </button>
@@ -54,15 +54,15 @@ export default function AccountModal({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Tên tài khoản
             </label>
             <input
               type="text"
               {...register("name")}
               className={`w-full px-4 py-2 border ${
-                errors.name ? "border-red-500" : "border-gray-300"
-              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                errors.name ? "border-red-500" : "border-input-border"
+              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
               placeholder="VD: Techcombank"
             />
             {errors.name && (
@@ -72,14 +72,14 @@ export default function AccountModal({
 
           {/* Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Loại tài khoản
             </label>
             <select
               {...register("type")}
               className={`w-full px-4 py-2 border ${
-                errors.type ? "border-red-500" : "border-gray-300"
-              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                errors.type ? "border-red-500" : "border-input-border"
+              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
             >
               <option value="cash">Tiền mặt</option>
               <option value="bank">Ngân hàng</option>
@@ -93,15 +93,15 @@ export default function AccountModal({
 
           {/* Balance */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Số dư ban đầu
             </label>
             <input
               type="number"
               {...register("balance", { valueAsNumber: true })}
               className={`w-full px-4 py-2 border ${
-                errors.balance ? "border-red-500" : "border-gray-300"
-              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                errors.balance ? "border-red-500" : "border-input-border"
+              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
               placeholder="0"
             />
             {errors.balance && (
@@ -113,21 +113,21 @@ export default function AccountModal({
 
           {/* Color */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Màu sắc
             </label>
             <div className="flex items-center space-x-3">
               <input
                 type="color"
                 {...register("color")}
-                className="w-12 h-12 border border-gray-300 rounded cursor-pointer"
+                className="w-12 h-12 border border-input-border rounded cursor-pointer"
               />
               <input
                 type="text"
                 {...register("color")}
                 className={`flex-1 px-4 py-2 border ${
-                  errors.color ? "border-red-500" : "border-gray-300"
-                } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  errors.color ? "border-red-500" : "border-input-border"
+                } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
                 placeholder="#3b82f6"
               />
             </div>
@@ -143,7 +143,7 @@ export default function AccountModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="flex-1 px-4 py-2 border border-card-border rounded-lg hover:bg-hover-bg text-foreground"
             >
               Hủy
             </button>

@@ -75,8 +75,10 @@ export default function AccountsPage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-800">Tổng tài sản</h2>
-              <p className="text-3xl font-bold text-blue-600 mt-2">
+              <h2 className="text-2xl font-bold text-foreground">
+                Tổng tài sản
+              </h2>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-2">
                 {formatCurrency(totalBalance)}
               </p>
             </div>
@@ -93,7 +95,7 @@ export default function AccountsPage() {
             {accounts.map((acc) => (
               <div
                 key={acc.id}
-                className="bg-white rounded-xl p-6 border-2 border-gray-200 hover:border-blue-500 transition-colors cursor-pointer"
+                className="bg-card-bg rounded-xl p-6 border-2 border-card-border hover:border-blue-500 transition-colors cursor-pointer"
               >
                 <div className="flex items-center justify-between mb-4">
                   <div
@@ -102,11 +104,11 @@ export default function AccountsPage() {
                   >
                     <Wallet className="w-6 h-6" style={{ color: acc.color }} />
                   </div>
-                  <span className="px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
+                  <span className="px-3 py-1 text-xs rounded-full bg-hover-bg text-muted-text">
                     {getAccountTypeLabel(acc.type)}
                   </span>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                <h3 className="text-lg font-semibold text-foreground mb-2">
                   {acc.name}
                 </h3>
                 <p className="text-2xl font-bold" style={{ color: acc.color }}>

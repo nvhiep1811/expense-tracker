@@ -79,38 +79,40 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center space-x-2 mb-4">
-            <Wallet className="w-10 h-10 text-blue-600" />
-            <span className="text-2xl font-bold text-gray-800">MoneyTrack</span>
+            <Wallet className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+            <span className="text-2xl font-bold text-foreground">
+              MoneyTrack
+            </span>
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Đăng nhập</h1>
-          <p className="text-gray-600">Chào mừng bạn quay trở lại!</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Đăng nhập</h1>
+          <p className="text-muted-text">Chào mừng bạn quay trở lại!</p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-card-bg rounded-2xl shadow-xl p-8 border border-card-border">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Email */}
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-foreground mb-2"
               >
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-text w-5 h-5" />
                 <input
                   type="email"
                   id="email"
                   {...register("email")}
                   className={`w-full pl-10 pr-4 py-3 border ${
-                    errors.email ? "border-red-500" : "border-gray-300"
-                  } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    errors.email ? "border-red-500" : "border-input-border"
+                  } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
                   placeholder="your@email.com"
                 />
               </div>
@@ -125,25 +127,25 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-foreground mb-2"
               >
                 Mật khẩu
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-text w-5 h-5" />
                 <input
                   type={showPassword ? "text" : "password"}
                   id="password"
                   {...register("password")}
                   className={`w-full pl-10 pr-12 py-3 border ${
-                    errors.password ? "border-red-500" : "border-gray-300"
-                  } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    errors.password ? "border-red-500" : "border-input-border"
+                  } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-text hover:text-foreground"
                 >
                   {showPassword ? (
                     <EyeOff className="w-5 h-5" />
@@ -166,15 +168,15 @@ export default function LoginPage() {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                  className="w-4 h-4 text-blue-600 border-input-border rounded focus:ring-blue-500 cursor-pointer"
                 />
-                <span className="ml-2 text-sm text-gray-600">
+                <span className="ml-2 text-sm text-muted-text">
                   Ghi nhớ đăng nhập
                 </span>
               </label>
               <Link
                 href="/forgot-password"
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
               >
                 Quên mật khẩu?
               </Link>
@@ -193,10 +195,10 @@ export default function LoginPage() {
           {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
+              <div className="w-full border-t border-card-border"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">
+              <span className="px-2 bg-card-bg text-muted-text">
                 Hoặc đăng nhập với
               </span>
             </div>
@@ -204,7 +206,7 @@ export default function LoginPage() {
 
           {/* Social Login */}
           <div className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition cursor-pointer">
+            <button className="flex items-center justify-center px-4 py-3 border border-card-border rounded-lg hover:bg-hover-bg transition cursor-pointer text-foreground">
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
@@ -225,7 +227,7 @@ export default function LoginPage() {
               </svg>
               Google
             </button>
-            <button className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition cursor-pointer">
+            <button className="flex items-center justify-center px-4 py-3 border border-card-border rounded-lg hover:bg-hover-bg transition cursor-pointer text-foreground">
               <svg className="w-5 h-5 mr-2" fill="#1877F2" viewBox="0 0 24 24">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
               </svg>
@@ -234,11 +236,11 @@ export default function LoginPage() {
           </div>
 
           {/* Sign Up Link */}
-          <p className="mt-6 text-center text-sm text-gray-600">
+          <p className="mt-6 text-center text-sm text-muted-text">
             Chưa có tài khoản?{" "}
             <Link
               href="/register"
-              className="text-blue-600 hover:text-blue-700 font-semibold"
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-semibold"
             >
               Đăng ký ngay
             </Link>
@@ -247,7 +249,10 @@ export default function LoginPage() {
 
         {/* Back to Home */}
         <div className="text-center mt-6">
-          <Link href="/" className="text-sm text-gray-600 hover:text-gray-800">
+          <Link
+            href="/"
+            className="text-sm text-muted-text hover:text-foreground"
+          >
             ← Quay lại trang chủ
           </Link>
         </div>

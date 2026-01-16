@@ -96,24 +96,24 @@ export default function TransactionsPage() {
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
         <div className="space-y-6">
           {/* Filters */}
-          <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
+          <div className="bg-card-bg rounded-xl p-4 sm:p-6 border border-card-border">
             <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
               <div className="flex-1 min-w-full sm:min-w-[250px]">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-text w-5 h-5" />
                   <input
                     type="text"
                     placeholder="Tìm kiếm giao dịch..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2 border border-input-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground"
                   />
                 </div>
               </div>
-              <select className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              <select className="w-full sm:w-auto px-4 py-2 border border-input-border rounded-lg focus:ring-2 focus:ring-blue-500 bg-input-bg text-foreground">
                 <option>Tất cả loại</option>
                 <option>Thu nhập</option>
                 <option>Chi tiêu</option>
               </select>
-              <select className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              <select className="w-full sm:w-auto px-4 py-2 border border-input-border rounded-lg focus:ring-2 focus:ring-blue-500 bg-input-bg text-foreground">
                 <option>Tháng này</option>
                 <option>Tháng trước</option>
                 <option>7 ngày qua</option>
@@ -130,47 +130,49 @@ export default function TransactionsPage() {
           </div>
 
           {/* Transactions Table */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+          <div className="bg-card-bg rounded-xl border border-card-border overflow-x-auto">
             <table className="w-full min-w-[640px]">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-hover-bg border-b border-card-border">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-muted-text">
                     Ngày
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-muted-text">
                     Mô tả
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-muted-text">
                     Danh mục
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-muted-text">
                     Tài khoản
                   </th>
-                  <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-muted-text">
                     Số tiền
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-card-border">
                 {transactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-gray-50 cursor-pointer">
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                  <tr key={tx.id} className="hover:bg-hover-bg cursor-pointer">
+                    <td className="px-6 py-4 text-sm text-muted-text">
                       {tx.date}
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-800">
+                    <td className="px-6 py-4 text-sm font-medium text-foreground">
                       {tx.description}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-700">
+                      <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
                         {tx.category}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-6 py-4 text-sm text-muted-text">
                       {tx.account}
                     </td>
                     <td
                       className={`px-6 py-4 text-sm font-semibold text-right ${
-                        tx.type === "income" ? "text-green-600" : "text-red-600"
+                        tx.type === "income"
+                          ? "text-green-600 dark:text-green-400"
+                          : "text-red-600 dark:text-red-400"
                       }`}
                     >
                       {tx.type === "income" ? "+" : "-"}

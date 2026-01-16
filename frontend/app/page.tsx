@@ -13,16 +13,17 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <GuestNav />
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-indigo-100">
+      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-            Quản lý chi tiêu <span className="text-blue-600">thông minh</span>
+          <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6">
+            Quản lý chi tiêu{" "}
+            <span className="text-blue-600 dark:text-blue-400">thông minh</span>
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+          <p className="text-xl text-muted-text mb-8 max-w-3xl mx-auto">
             MoneyTrack giúp bạn kiểm soát tài chính cá nhân một cách dễ dàng.
             Theo dõi thu chi, đặt ngân sách và đạt được mục tiêu tài chính của
             bạn.
@@ -36,7 +37,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/login"
-              className="px-8 py-4 bg-white text-gray-800 rounded-lg hover:bg-gray-50 transition font-semibold text-lg border-2 border-gray-200"
+              className="px-8 py-4 bg-card-bg text-foreground rounded-lg hover:bg-hover-bg transition font-semibold text-lg border-2 border-card-border"
             >
               Đăng nhập
             </Link>
@@ -44,7 +45,7 @@ export default function HomePage() {
 
           {/* Hero Image/Illustration */}
           <div className="mt-16">
-            <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-8 max-w-5xl mx-auto">
+            <div className="bg-card-bg rounded-2xl shadow-2xl p-4 sm:p-8 max-w-5xl mx-auto border border-card-border">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
                   <Wallet className="w-8 h-8 mb-2" />
@@ -68,13 +69,16 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+      <section
+        id="features"
+        className="py-20 px-4 sm:px-6 lg:px-8 bg-background"
+      >
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-foreground mb-4">
               Tính năng nổi bật
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-muted-text">
               Tất cả những gì bạn cần để quản lý tài chính hiệu quả
             </p>
           </div>
@@ -86,57 +90,63 @@ export default function HomePage() {
                 title: "Theo dõi chi tiêu",
                 description:
                   "Ghi chép và phân loại mọi khoản chi tiêu của bạn một cách tự động và chính xác.",
-                color: "bg-blue-100 text-blue-600",
+                color:
+                  "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400",
               },
               {
                 icon: Target,
                 title: "Đặt ngân sách",
                 description:
                   "Thiết lập ngân sách cho từng danh mục và nhận cảnh báo khi vượt mức.",
-                color: "bg-purple-100 text-purple-600",
+                color:
+                  "bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400",
               },
               {
                 icon: TrendingUp,
                 title: "Báo cáo chi tiết",
                 description:
                   "Xem biểu đồ và báo cáo trực quan về tình hình tài chính của bạn.",
-                color: "bg-green-100 text-green-600",
+                color:
+                  "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400",
               },
               {
                 icon: Wallet,
                 title: "Quản lý tài khoản",
                 description:
                   "Theo dõi số dư của nhiều tài khoản ngân hàng, ví điện tử trong một nơi.",
-                color: "bg-orange-100 text-orange-600",
+                color:
+                  "bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400",
               },
               {
                 icon: Shield,
                 title: "Bảo mật cao",
                 description:
                   "Dữ liệu của bạn được mã hóa và bảo vệ với công nghệ bảo mật hiện đại.",
-                color: "bg-red-100 text-red-600",
+                color:
+                  "bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400",
               },
               {
                 icon: Smartphone,
                 title: "Đa nền tảng",
                 description:
                   "Truy cập từ mọi thiết bị - máy tính, tablet, điện thoại. Dữ liệu luôn đồng bộ.",
-                color: "bg-indigo-100 text-indigo-600",
+                color:
+                  "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400",
               },
             ].map((feature, idx) => (
               <div
                 key={idx}
-                className="bg-white rounded-xl p-6 border-2 border-gray-100 hover:border-blue-200 hover:shadow-lg transition"
+                className="bg-card-bg rounded-xl p-6 border-2 border-card-border hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-lg transition"
               >
                 <div
                   className={`w-12 h-12 rounded-lg ${feature.color} flex items-center justify-center mb-4`}
                 >
                   <feature.icon className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <h3 className="text-xl font-semibold text-foreground mb-2">
                   {feature.title}
                 </h3>
-                <p className="text-gray-600">{feature.description}</p>
+                <p className="text-muted-text">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -144,26 +154,26 @@ export default function HomePage() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-hover-bg">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-foreground mb-4">
               Bảng giá đơn giản
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-muted-text">
               Chọn gói phù hợp với nhu cầu của bạn
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Free Plan */}
-            <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-blue-300 transition">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+            <div className="bg-card-bg rounded-2xl p-8 border-2 border-card-border hover:border-blue-400 dark:hover:border-blue-500 transition">
+              <h3 className="text-2xl font-bold text-foreground mb-2">
                 Miễn phí
               </h3>
               <div className="mb-6">
-                <span className="text-4xl font-bold text-gray-900">0đ</span>
-                <span className="text-gray-600">/tháng</span>
+                <span className="text-4xl font-bold text-foreground">0đ</span>
+                <span className="text-muted-text">/tháng</span>
               </div>
               <ul className="space-y-4 mb-8">
                 {[
@@ -174,13 +184,13 @@ export default function HomePage() {
                 ].map((item, idx) => (
                   <li key={idx} className="flex items-center space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span className="text-gray-700">{item}</span>
+                    <span className="text-muted-text">{item}</span>
                   </li>
                 ))}
               </ul>
               <Link
                 href="/register"
-                className="block w-full text-center px-6 py-3 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition font-semibold"
+                className="block w-full text-center px-6 py-3 bg-hover-bg text-foreground rounded-lg hover:bg-card-border transition font-semibold"
               >
                 Bắt đầu
               </Link>
@@ -221,15 +231,15 @@ export default function HomePage() {
             </div>
 
             {/* Business Plan */}
-            <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-blue-300 transition">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+            <div className="bg-card-bg rounded-2xl p-8 border-2 border-card-border hover:border-blue-400 dark:hover:border-blue-500 transition">
+              <h3 className="text-2xl font-bold text-foreground mb-2">
                 Doanh nghiệp
               </h3>
               <div className="mb-6">
-                <span className="text-4xl font-bold text-gray-900">
+                <span className="text-4xl font-bold text-foreground">
                   299.000đ
                 </span>
-                <span className="text-gray-600">/tháng</span>
+                <span className="text-muted-text">/tháng</span>
               </div>
               <ul className="space-y-4 mb-8">
                 {[
@@ -241,13 +251,13 @@ export default function HomePage() {
                 ].map((item, idx) => (
                   <li key={idx} className="flex items-center space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span className="text-gray-700">{item}</span>
+                    <span className="text-muted-text">{item}</span>
                   </li>
                 ))}
               </ul>
               <Link
                 href="/register"
-                className="block w-full text-center px-6 py-3 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition font-semibold"
+                className="block w-full text-center px-6 py-3 bg-hover-bg text-foreground rounded-lg hover:bg-card-border transition font-semibold"
               >
                 Liên hệ
               </Link>

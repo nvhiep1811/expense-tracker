@@ -27,7 +27,7 @@ export default function StatCard({
   };
 
   return (
-    <div className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-shadow">
+    <div className="bg-card-bg rounded-xl p-6 border border-card-border hover:shadow-lg transition-shadow">
       <div className="flex items-center justify-between mb-4">
         <div
           className={`w-12 h-12 rounded-lg flex items-center justify-center ${color}`}
@@ -37,7 +37,9 @@ export default function StatCard({
         {change !== undefined && (
           <span
             className={`text-sm font-medium ${
-              isPositive ? "text-green-600" : "text-red-600"
+              isPositive
+                ? "text-green-600 dark:text-green-400"
+                : "text-red-600 dark:text-red-400"
             }`}
           >
             {isPositive ? "+" : ""}
@@ -45,8 +47,8 @@ export default function StatCard({
           </span>
         )}
       </div>
-      <h3 className="text-sm text-gray-600 mb-1">{title}</h3>
-      <p className="text-2xl font-bold text-gray-800">
+      <h3 className="text-sm text-muted-text mb-1">{title}</h3>
+      <p className="text-2xl font-bold text-foreground">
         {formatCurrency(amount)}
       </p>
     </div>

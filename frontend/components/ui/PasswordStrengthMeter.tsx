@@ -101,7 +101,7 @@ export default function PasswordStrengthMeter({
           <div
             key={level}
             className={`h-1.5 flex-1 rounded-full transition-colors ${
-              level <= result.strength ? result.color : "bg-gray-200"
+              level <= result.strength ? result.color : "bg-hover-bg"
             }`}
           />
         ))}
@@ -118,12 +118,12 @@ export default function PasswordStrengthMeter({
 
       {/* Requirements Checklist */}
       <div className="text-xs space-y-1 mt-3">
-        <p className="font-medium text-gray-700 mb-2">Yêu cầu mật khẩu:</p>
+        <p className="font-medium text-foreground mb-2">Yêu cầu mật khẩu:</p>
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <div
               className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                result.checks.length ? "bg-green-500 text-white" : "bg-gray-200"
+                result.checks.length ? "bg-green-500 text-white" : "bg-hover-bg"
               }`}
             >
               {result.checks.length && (
@@ -144,7 +144,9 @@ export default function PasswordStrengthMeter({
             </div>
             <span
               className={
-                result.checks.length ? "text-green-700" : "text-gray-500"
+                result.checks.length
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-muted-text"
               }
             >
               Ít nhất 8 ký tự
@@ -156,7 +158,7 @@ export default function PasswordStrengthMeter({
               className={`w-4 h-4 rounded-full flex items-center justify-center ${
                 result.checks.lowercase
                   ? "bg-green-500 text-white"
-                  : "bg-gray-200"
+                  : "bg-hover-bg"
               }`}
             >
               {result.checks.lowercase && (
@@ -177,7 +179,9 @@ export default function PasswordStrengthMeter({
             </div>
             <span
               className={
-                result.checks.lowercase ? "text-green-700" : "text-gray-500"
+                result.checks.lowercase
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-muted-text"
               }
             >
               Chữ thường (a-z)
@@ -189,7 +193,7 @@ export default function PasswordStrengthMeter({
               className={`w-4 h-4 rounded-full flex items-center justify-center ${
                 result.checks.uppercase
                   ? "bg-green-500 text-white"
-                  : "bg-gray-200"
+                  : "bg-hover-bg"
               }`}
             >
               {result.checks.uppercase && (
@@ -210,7 +214,9 @@ export default function PasswordStrengthMeter({
             </div>
             <span
               className={
-                result.checks.uppercase ? "text-green-700" : "text-gray-500"
+                result.checks.uppercase
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-muted-text"
               }
             >
               Chữ hoa (A-Z)
@@ -220,7 +226,7 @@ export default function PasswordStrengthMeter({
           <div className="flex items-center gap-2">
             <div
               className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                result.checks.number ? "bg-green-500 text-white" : "bg-gray-200"
+                result.checks.number ? "bg-green-500 text-white" : "bg-hover-bg"
               }`}
             >
               {result.checks.number && (
@@ -241,7 +247,9 @@ export default function PasswordStrengthMeter({
             </div>
             <span
               className={
-                result.checks.number ? "text-green-700" : "text-gray-500"
+                result.checks.number
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-muted-text"
               }
             >
               Số (0-9)
@@ -253,7 +261,7 @@ export default function PasswordStrengthMeter({
               className={`w-4 h-4 rounded-full flex items-center justify-center ${
                 result.checks.special
                   ? "bg-green-500 text-white"
-                  : "bg-gray-200"
+                  : "bg-hover-bg"
               }`}
             >
               {result.checks.special && (
@@ -274,7 +282,9 @@ export default function PasswordStrengthMeter({
             </div>
             <span
               className={
-                result.checks.special ? "text-green-700" : "text-gray-500"
+                result.checks.special
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-muted-text"
               }
             >
               Ký tự đặc biệt (@$!%*?&#)

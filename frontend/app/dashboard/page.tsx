@@ -208,8 +208,8 @@ export default function DashboardPage() {
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Expense by Category */}
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            <div className="bg-card-bg rounded-xl p-6 border border-card-border">
+              <h3 className="text-lg font-semibold text-foreground mb-4">
                 Chi tiêu theo danh mục
               </h3>
               <ResponsiveContainer width="100%" height={300}>
@@ -244,15 +244,15 @@ export default function DashboardPage() {
                       className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: cat.color }}
                     ></div>
-                    <span className="text-sm text-gray-600">{cat.name}</span>
+                    <span className="text-sm text-muted-text">{cat.name}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Income vs Expense */}
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            <div className="bg-card-bg rounded-xl p-6 border border-card-border">
+              <h3 className="text-lg font-semibold text-foreground mb-4">
                 Thu nhập vs Chi tiêu
               </h3>
               <ResponsiveContainer width="100%" height={300}>
@@ -286,12 +286,12 @@ export default function DashboardPage() {
           {/* Recent Transactions & Budget Overview */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Recent Transactions */}
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
+            <div className="bg-card-bg rounded-xl p-6 border border-card-border">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">
+                <h3 className="text-lg font-semibold text-foreground">
                   Giao dịch gần đây
                 </h3>
-                <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                <button className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
                   Xem tất cả
                 </button>
               </div>
@@ -299,14 +299,14 @@ export default function DashboardPage() {
                 {transactions.slice(0, 5).map((tx) => (
                   <div
                     key={tx.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-hover-bg rounded-lg"
                   >
                     <div className="flex items-center space-x-3">
                       <div
                         className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                           tx.type === "income"
-                            ? "bg-green-100 text-green-600"
-                            : "bg-red-100 text-red-600"
+                            ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
+                            : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
                         }`}
                       >
                         {tx.type === "income" ? (
@@ -316,15 +316,17 @@ export default function DashboardPage() {
                         )}
                       </div>
                       <div>
-                        <p className="font-medium text-gray-800">
+                        <p className="font-medium text-foreground">
                           {tx.category}
                         </p>
-                        <p className="text-sm text-gray-500">{tx.date}</p>
+                        <p className="text-sm text-muted-text">{tx.date}</p>
                       </div>
                     </div>
                     <span
                       className={`font-semibold ${
-                        tx.type === "income" ? "text-green-600" : "text-red-600"
+                        tx.type === "income"
+                          ? "text-green-600 dark:text-green-400"
+                          : "text-red-600 dark:text-red-400"
                       }`}
                     >
                       {tx.type === "income" ? "+" : "-"}
@@ -336,12 +338,12 @@ export default function DashboardPage() {
             </div>
 
             {/* Budget Progress */}
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
+            <div className="bg-card-bg rounded-xl p-6 border border-card-border">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">
+                <h3 className="text-lg font-semibold text-foreground">
                   Ngân sách tháng này
                 </h3>
-                <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                <button className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
                   Chi tiết
                 </button>
               </div>
@@ -353,16 +355,16 @@ export default function DashboardPage() {
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
                           <span className="text-xl">{cat.icon}</span>
-                          <span className="text-sm font-medium text-gray-700">
+                          <span className="text-sm font-medium text-foreground">
                             {cat.name}
                           </span>
                         </div>
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-muted-text">
                           {formatCurrency(cat.spent)} /{" "}
                           {formatCurrency(cat.budget)}
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-hover-bg rounded-full h-2">
                         <div
                           className={`h-2 rounded-full transition-all ${
                             percentage > 100
