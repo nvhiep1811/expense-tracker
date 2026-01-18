@@ -25,6 +25,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -126,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await authAPI.logout();
 
       deleteCookie("access_token");
+      deleteCookie("refresh_token");
       setUser(null);
 
       toast.success(response.message || "Đã đăng xuất thành công!");
@@ -133,14 +135,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Logout failed:", error);
       deleteCookie("access_token");
+      deleteCookie("refresh_token");
       setUser(null);
       toast.error("Đăng xuất thất bại!");
       router.push("/");
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const token = getCookie("access_token");
+      if (!token) {
+        setUser(null);
+        return;
+      }
+
+      const profile = await profilesAPI.getMyProfile();
+
+      if (profile) {
+        setUser({
+          id: profile.id,
+          name: profile.full_name || "User",
+          email: profile.email || "",
+          avatarUrl: profile.avatar_url || undefined,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to refresh user:", error);
+      deleteCookie("access_token");
+      deleteCookie("refresh_token");
+      setUser(null);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, isLoading, login, register, logout, refreshUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

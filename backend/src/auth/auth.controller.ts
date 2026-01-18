@@ -6,9 +6,16 @@ import {
   HttpStatus,
   Get,
   UseGuards,
+  Headers,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CheckEmailDto, RegisterDto, LoginDto } from './dto/auth.dto';
+import {
+  CheckEmailDto,
+  RegisterDto,
+  LoginDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from './dto/auth.dto';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 
@@ -68,5 +75,34 @@ export class AuthController {
       user,
       message: 'Lấy thông tin người dùng thành công',
     };
+  }
+
+  /**
+   * POST /auth/forgot-password
+   * Send password reset email
+   */
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(forgotPasswordDto.email);
+  }
+
+  /**
+   * POST /auth/reset-password
+   * Reset password with new password
+   */
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(
+    @Body() resetPasswordDto: ResetPasswordDto,
+    @Headers('authorization') authorization: string,
+  ) {
+    // Lấy token từ Authorization header
+    if (!authorization) {
+      throw new Error('Thiếu token xác thực');
+    }
+
+    const token = authorization.replace('Bearer ', '');
+    return this.authService.resetPassword(resetPasswordDto.new_password, token);
   }
 }

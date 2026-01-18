@@ -6,16 +6,30 @@ import { CheckEmailDto, RegisterDto, LoginDto } from './dto/auth.dto';
 @Injectable()
 export class AuthService {
   private supabase: SupabaseClient;
+  private supabaseAdmin: SupabaseClient<any, any, any>;
 
   constructor(private configService: ConfigService) {
     const supabaseUrl = this.configService.get<string>('SUPABASE_URL');
     const supabaseKey = this.configService.get<string>('SUPABASE_ANON_KEY');
+    const supabaseServiceKey = this.configService.get<string>(
+      'SUPABASE_SERVICE_ROLE_KEY',
+    );
 
     if (!supabaseUrl || !supabaseKey) {
       throw new Error('Missing Supabase credentials in environment variables');
     }
 
     this.supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Create admin client with service role key if available
+    if (supabaseServiceKey) {
+      this.supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      });
+    }
   }
 
   /**
@@ -50,6 +64,10 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     const { email, password, full_name } = registerDto;
 
+    // Get the frontend URL from environment or use default
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+
     await this.supabase.auth.signUp({
       email,
       password,
@@ -57,6 +75,7 @@ export class AuthService {
         data: {
           full_name,
         },
+        emailRedirectTo: `${frontendUrl}/auth/callback`,
       },
     });
 
@@ -103,5 +122,97 @@ export class AuthService {
     return {
       message: 'Đã đăng xuất thành công!',
     };
+  }
+
+  /**
+   * Forgot password
+   */
+  async forgotPassword(email: string) {
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${frontendUrl}/auth/callback`,
+    });
+    if (error) {
+      console.error('Error sending password reset email:', error);
+      throw new Error(
+        'Không thể gửi email đặt lại mật khẩu. Vui lòng thử lại.',
+      );
+    }
+
+    return {
+      message:
+        'Nếu email tồn tại trong hệ thống, một liên kết đặt lại mật khẩu đã được gửi.',
+    };
+  }
+
+  /**
+   * Reset password
+   */
+  async resetPassword(newPassword: string, accessToken: string) {
+    try {
+      // Verify the token first
+      const supabaseUrl = this.configService.get<string>('SUPABASE_URL');
+      const supabaseKey = this.configService.get<string>('SUPABASE_ANON_KEY');
+
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error(
+          'Missing Supabase credentials in environment variables',
+        );
+      }
+
+      const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+      // Verify token and get user
+      const {
+        data: { user },
+        error: verifyError,
+      } = await supabaseClient.auth.getUser(accessToken);
+
+      if (verifyError || !user) {
+        console.error('Error verifying token:', verifyError);
+        throw new Error('Token không hợp lệ hoặc đã hết hạn.');
+      }
+
+      if (this.supabaseAdmin) {
+        const { error: updateError } =
+          await this.supabaseAdmin.auth.admin.updateUserById(user.id, {
+            password: newPassword,
+          });
+
+        if (updateError) {
+          console.error('Error updating password via admin:', updateError);
+          throw new Error('Không thể cập nhật mật khẩu.');
+        }
+      } else {
+        await supabaseClient.auth.setSession({
+          access_token: accessToken,
+          refresh_token: '',
+        });
+
+        const { error: updateError } = await supabaseClient.auth.updateUser({
+          password: newPassword,
+        });
+
+        if (updateError) {
+          console.error('Error updating password:', updateError);
+          throw new Error('Không thể cập nhật mật khẩu.');
+        }
+      }
+
+      return {
+        message: 'Mật khẩu đã được đặt lại thành công!',
+      };
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      if (
+        error instanceof Error &&
+        (error.message.includes('Token') ||
+          error.message.includes('không hợp lệ'))
+      ) {
+        throw error;
+      }
+      throw new Error('Không thể đặt lại mật khẩu. Vui lòng thử lại.');
+    }
   }
 }

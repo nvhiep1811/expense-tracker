@@ -81,6 +81,24 @@ export const authAPI = {
     const response = await api.post("/auth/check-email", { email });
     return response.data;
   },
+
+  forgotPassword: async (email: string) => {
+    const response = await api.post("/auth/forgot-password", { email });
+    return response.data;
+  },
+
+  resetPassword: async (newPassword: string, accessToken: string) => {
+    const response = await api.post(
+      "/auth/reset-password",
+      { new_password: newPassword },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    return response.data;
+  },
 };
 
 // Profiles API

@@ -92,3 +92,30 @@ export const budgetSchema = z.object({
 });
 
 export type BudgetFormData = z.infer<typeof budgetSchema>;
+
+// Reset password form validation
+export const resetPasswordSchema = z
+  .object({
+    newPassword: z
+      .string()
+      .min(1, "Mật khẩu mới là bắt buộc")
+      .min(8, "Mật khẩu phải có ít nhất 8 ký tự")
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])/,
+        "Mật khẩu phải có ít nhất 1 chữ thường, 1 chữ hoa, 1 số và 1 ký tự đặc biệt (@$!%*?&#)"
+      ),
+    confirmPassword: z.string().min(1, "Xác nhận mật khẩu là bắt buộc"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Mật khẩu không khớp",
+    path: ["confirmPassword"],
+  });
+
+export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
+
+// Forgot password form validation
+export const forgotPasswordSchema = z.object({
+  email: z.string().min(1, "Email là bắt buộc").email("Email không hợp lệ"),
+});
+
+export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
