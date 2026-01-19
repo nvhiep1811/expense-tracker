@@ -63,7 +63,7 @@ export default function AccountsPage() {
   };
 
   const handleAddAccount = (data: AccountFormData) => {
-    console.log("New account:", data);
+    // Account created successfully
     // TODO: Add API call to save account
   };
 

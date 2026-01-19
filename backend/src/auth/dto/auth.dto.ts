@@ -39,3 +39,8 @@ export class ResetPasswordDto {
   @MinLength(8, { message: 'Mật khẩu phải có ít nhất 8 ký tự' })
   new_password: string;
 }
+
+export class OAuthLoginDto {
+  @IsNotEmpty({ message: 'Provider không được để trống' })
+  provider: 'google' | 'facebook';
+}

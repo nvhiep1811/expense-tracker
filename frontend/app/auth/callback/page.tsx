@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 export default function AuthCallback() {
   const router = useRouter();
   const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading"
+    "loading",
   );
   const hasProcessedRef = useRef(false);
 
@@ -22,7 +22,7 @@ export default function AuthCallback() {
       try {
         // Lấy params từ hash hoặc query string
         const hashParams = new URLSearchParams(
-          window.location.hash.substring(1)
+          window.location.hash.substring(1),
         );
         const queryParams = new URLSearchParams(window.location.search);
 
@@ -39,10 +39,18 @@ export default function AuthCallback() {
         if (error) {
           console.error("Auth error:", error, errorDescription);
           setStatus("error");
-          toast.error(
-            errorDescription || "Xác thực không thành công. Vui lòng thử lại."
-          );
-          setTimeout(() => router.push("/login"), 2000);
+
+          // Parse error description for better user message
+          let userMessage = "Xác thực không thành công. Vui lòng thử lại.";
+          if (errorDescription) {
+            const decoded = decodeURIComponent(
+              errorDescription.replace(/\+/g, " "),
+            );
+            userMessage = decoded;
+          }
+
+          toast.error(userMessage, { duration: 5000 });
+          setTimeout(() => router.push("/login"), 3000);
           return;
         }
 
@@ -72,21 +80,27 @@ export default function AuthCallback() {
           toast.success("Xác thực thành công! Vui lòng đặt lại mật khẩu.");
           router.replace("/reset-password");
         } else {
-          // Với signup hoặc login bình thường, lưu vào cookie
+          // Với signup, login bình thường hoặc OAuth, lưu vào cookie
           setCookie("access_token", accessToken, 7);
           if (refreshToken) {
             setCookie("refresh_token", refreshToken, 30);
           }
 
           // Lấy profile (không chặn flow nếu thất bại)
-          profilesAPI.getMyProfile().catch((err) => {
+          try {
+            await profilesAPI.getMyProfile();
+          } catch (err) {
             console.warn("Failed to fetch profile:", err);
-          });
+            // Continue anyway, profile will be fetched on dashboard
+          }
 
           if (type === "signup") {
             toast.success(
-              "Xác thực email thành công! Chào mừng bạn đến với ứng dụng."
+              "Xác thực email thành công! Chào mừng bạn đến với ứng dụng.",
             );
+          } else if (!type) {
+            // OAuth login - không có type parameter
+            toast.success("Đăng nhập thành công!");
           } else {
             toast.success("Xác thực thành công!");
           }

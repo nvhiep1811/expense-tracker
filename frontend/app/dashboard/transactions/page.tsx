@@ -82,7 +82,7 @@ export default function TransactionsPage() {
   };
 
   const handleAddTransaction = (data: TransactionFormData) => {
-    console.log("New transaction:", data);
+    // Transaction created successfully
     // TODO: Add API call to save transaction
   };
 

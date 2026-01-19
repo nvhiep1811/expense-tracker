@@ -35,7 +35,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor to handle errors
@@ -53,7 +53,7 @@ api.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // Auth API
@@ -95,8 +95,14 @@ export const authAPI = {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-      }
+      },
     );
+    return response.data;
+  },
+
+  // OAuth login - get redirect URL
+  getOAuthUrl: async (provider: "google" | "facebook") => {
+    const response = await api.post("/auth/oauth", { provider });
     return response.data;
   },
 };

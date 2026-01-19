@@ -15,6 +15,7 @@ import {
   LoginDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  OAuthLoginDto,
 } from './dto/auth.dto';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
@@ -104,5 +105,15 @@ export class AuthController {
 
     const token = authorization.replace('Bearer ', '');
     return this.authService.resetPassword(resetPasswordDto.new_password, token);
+  }
+
+  /**
+   * POST /auth/oauth
+   * Get OAuth URL for social login (Google, Facebook)
+   */
+  @Post('oauth')
+  @HttpCode(HttpStatus.OK)
+  async getOAuthUrl(@Body() oAuthLoginDto: OAuthLoginDto) {
+    return this.authService.getOAuthUrl(oAuthLoginDto.provider);
   }
 }

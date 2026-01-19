@@ -26,6 +26,8 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithFacebook: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -113,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
       });
       toast.success(
-        res.message || "Đăng ký thành công! Vui lòng kiểm tra email."
+        res.message || "Đăng ký thành công! Vui lòng kiểm tra email.",
       );
       router.push("/login");
     } catch (error) {
@@ -168,9 +170,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginWithGoogle = async () => {
+    try {
+      const response = await authAPI.getOAuthUrl("google");
+      if (response?.url) {
+        window.location.href = response.url;
+      } else {
+        throw new Error("Invalid OAuth response");
+      }
+    } catch (error) {
+      console.error("Google login failed:", error);
+      toast.error("Không thể đăng nhập bằng Google. Vui lòng thử lại!");
+      throw error;
+    }
+  };
+
+  const loginWithFacebook = async () => {
+    try {
+      const response = await authAPI.getOAuthUrl("facebook");
+      if (response?.url) {
+        window.location.href = response.url;
+      } else {
+        throw new Error("Invalid OAuth response");
+      }
+    } catch (error) {
+      console.error("Facebook login failed:", error);
+      toast.error("Không thể đăng nhập bằng Facebook. Vui lòng thử lại!");
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, login, register, logout, refreshUser }}
+      value={{
+        user,
+        isLoading,
+        login,
+        register,
+        logout,
+        refreshUser,
+        loginWithGoogle,
+        loginWithFacebook,
+      }}
     >
       {children}
     </AuthContext.Provider>

@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient, Provider } from '@supabase/supabase-js';
 import { CheckEmailDto, RegisterDto, LoginDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private supabase: SupabaseClient;
   private supabaseAdmin: SupabaseClient<any, any, any>;
 
@@ -46,7 +47,7 @@ export class AuthService {
     });
 
     if (error) {
-      console.error('Error checking email:', error);
+      this.logger.error('Error checking email', error);
       throw new Error('Không thể kiểm tra email. Vui lòng thử lại.');
     }
 
@@ -134,7 +135,7 @@ export class AuthService {
       redirectTo: `${frontendUrl}/auth/callback`,
     });
     if (error) {
-      console.error('Error sending password reset email:', error);
+      this.logger.error('Error sending password reset email', error);
       throw new Error(
         'Không thể gửi email đặt lại mật khẩu. Vui lòng thử lại.',
       );
@@ -170,7 +171,7 @@ export class AuthService {
       } = await supabaseClient.auth.getUser(accessToken);
 
       if (verifyError || !user) {
-        console.error('Error verifying token:', verifyError);
+        this.logger.error('Error verifying token', verifyError);
         throw new Error('Token không hợp lệ hoặc đã hết hạn.');
       }
 
@@ -181,7 +182,7 @@ export class AuthService {
           });
 
         if (updateError) {
-          console.error('Error updating password via admin:', updateError);
+          this.logger.error('Error updating password via admin', updateError);
           throw new Error('Không thể cập nhật mật khẩu.');
         }
       } else {
@@ -195,7 +196,7 @@ export class AuthService {
         });
 
         if (updateError) {
-          console.error('Error updating password:', updateError);
+          this.logger.error('Error updating password', updateError);
           throw new Error('Không thể cập nhật mật khẩu.');
         }
       }
@@ -204,7 +205,7 @@ export class AuthService {
         message: 'Mật khẩu đã được đặt lại thành công!',
       };
     } catch (error) {
-      console.error('Error resetting password:', error);
+      this.logger.error('Error resetting password', error);
       if (
         error instanceof Error &&
         (error.message.includes('Token') ||
@@ -214,5 +215,39 @@ export class AuthService {
       }
       throw new Error('Không thể đặt lại mật khẩu. Vui lòng thử lại.');
     }
+  }
+
+  /**
+   * Get OAuth URL for social login
+   */
+  async getOAuthUrl(provider: Provider) {
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+
+    const { data, error } = await this.supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${frontendUrl}/auth/callback`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    });
+
+    if (error) {
+      this.logger.error('Error generating OAuth URL', error);
+      throw new Error('Không thể tạo liên kết đăng nhập. Vui lòng thử lại.');
+    }
+
+    if (!data.url) {
+      this.logger.error('OAuth URL is empty');
+      throw new Error('Không thể tạo liên kết đăng nhập. Vui lòng thử lại.');
+    }
+
+    return {
+      url: data.url,
+      provider,
+    };
   }
 }

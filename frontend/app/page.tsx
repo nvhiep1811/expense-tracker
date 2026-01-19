@@ -17,7 +17,7 @@ export default function HomePage() {
       <GuestNav />
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800">
+      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-linear-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6">
             Quản lý chi tiêu{" "}
@@ -47,17 +47,17 @@ export default function HomePage() {
           <div className="mt-16">
             <div className="bg-card-bg rounded-2xl shadow-2xl p-4 sm:p-8 max-w-5xl mx-auto border border-card-border">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+                <div className="bg-linear-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
                   <Wallet className="w-8 h-8 mb-2" />
                   <p className="text-sm font-medium">Tổng tài sản</p>
                   <p className="text-2xl font-bold mt-2">32.470.000đ</p>
                 </div>
-                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
+                <div className="bg-linear-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
                   <TrendingUp className="w-8 h-8 mb-2" />
                   <p className="text-sm font-medium">Thu nhập</p>
                   <p className="text-2xl font-bold mt-2">15.000.000đ</p>
                 </div>
-                <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white sm:col-span-2 lg:col-span-1">
+                <div className="bg-linear-to-br from-red-500 to-red-600 rounded-xl p-6 text-white sm:col-span-2 lg:col-span-1">
                   <Target className="w-8 h-8 mb-2" />
                   <p className="text-sm font-medium">Chi tiêu</p>
                   <p className="text-2xl font-bold mt-2">10.400.000đ</p>
@@ -197,7 +197,7 @@ export default function HomePage() {
             </div>
 
             {/* Premium Plan */}
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-8 border-2 border-blue-600 shadow-xl transform scale-105">
+            <div className="bg-linear-to-br from-blue-500 to-blue-600 rounded-2xl p-8 border-2 border-blue-600 shadow-xl transform scale-105">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-2xl font-bold text-white">Premium</h3>
                 <span className="px-3 py-1 bg-yellow-400 text-yellow-900 rounded-full text-xs font-bold">
@@ -269,7 +269,7 @@ export default function HomePage() {
       {/* CTA Section */}
       <section
         id="about"
-        className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 to-indigo-700"
+        className="py-20 px-4 sm:px-6 lg:px-8 bg-linear-to-br from-blue-600 to-indigo-700"
       >
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-bold text-white mb-4">
