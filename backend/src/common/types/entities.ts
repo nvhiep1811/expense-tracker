@@ -56,7 +56,7 @@ export interface Budget {
 
 export interface Profile {
   id: string;
-  email: string;
+  email?: string;
   full_name?: string;
   avatar_url?: string;
   created_at: string;

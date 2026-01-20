@@ -79,6 +79,18 @@ export default function AuthCallback() {
 
           toast.success("Xác thực thành công! Vui lòng đặt lại mật khẩu.");
           router.replace("/reset-password");
+        } else if (type === "email_change") {
+          // Xử lý xác nhận thay đổi email
+          setCookie("access_token", accessToken, 7);
+          if (refreshToken) {
+            setCookie("refresh_token", refreshToken, 30);
+          }
+
+          toast.success(
+            "Thay đổi email thành công! Email của bạn đã được cập nhật.",
+            { duration: 5000 },
+          );
+          setTimeout(() => router.replace("/dashboard/profile"), 1000);
         } else {
           // Với signup, login bình thường hoặc OAuth, lưu vào cookie
           setCookie("access_token", accessToken, 7);

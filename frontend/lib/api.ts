@@ -52,7 +52,17 @@ api.interceptors.response.use(
         window.location.href = "/login";
       }
     }
-    return Promise.reject(error);
+
+    // Extract error message from response
+    const errorMessage =
+      error.response?.data?.message || error.message || "Đã xảy ra lỗi";
+
+    // Create a new error with the message for better handling
+    const apiError = new Error(errorMessage);
+    (apiError as any).response = error.response;
+    (apiError as any).status = error.response?.status;
+
+    return Promise.reject(apiError);
   },
 );
 
@@ -119,6 +129,32 @@ export const profilesAPI = {
     avatar_url?: string;
   }) => {
     const response = await api.put("/profiles/me", data);
+    return response.data;
+  },
+
+  changeEmail: async (new_email: string) => {
+    const response = await api.post("/profiles/change-email", { new_email });
+    return response.data;
+  },
+
+  changePassword: async (current_password: string, new_password: string) => {
+    const response = await api.post("/profiles/change-password", {
+      current_password,
+      new_password,
+    });
+    return response.data;
+  },
+
+  uploadAvatar: async (
+    file_name: string,
+    file_type: string,
+    base64_data: string,
+  ) => {
+    const response = await api.post("/profiles/upload-avatar", {
+      file_name,
+      file_type,
+      base64_data,
+    });
     return response.data;
   },
 };

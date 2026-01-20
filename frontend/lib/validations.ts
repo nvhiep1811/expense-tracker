@@ -26,7 +26,7 @@ export const registerSchema = z
       .min(8, "Mật khẩu phải có ít nhất 8 ký tự")
       .regex(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])/,
-        "Mật khẩu phải có ít nhất 1 chữ thường, 1 chữ hoa, 1 số và 1 ký tự đặc biệt (@$!%*?&#)"
+        "Mật khẩu phải có ít nhất 1 chữ thường, 1 chữ hoa, 1 số và 1 ký tự đặc biệt (@$!%*?&#)",
       ),
     confirmPassword: z.string().min(1, "Xác nhận mật khẩu là bắt buộc"),
     terms: z.literal(true, {
@@ -102,7 +102,7 @@ export const resetPasswordSchema = z
       .min(8, "Mật khẩu phải có ít nhất 8 ký tự")
       .regex(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])/,
-        "Mật khẩu phải có ít nhất 1 chữ thường, 1 chữ hoa, 1 số và 1 ký tự đặc biệt (@$!%*?&#)"
+        "Mật khẩu phải có ít nhất 1 chữ thường, 1 chữ hoa, 1 số và 1 ký tự đặc biệt (@$!%*?&#)",
       ),
     confirmPassword: z.string().min(1, "Xác nhận mật khẩu là bắt buộc"),
   })
@@ -119,3 +119,46 @@ export const forgotPasswordSchema = z.object({
 });
 
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+
+// Profile update validation
+export const updateProfileSchema = z.object({
+  full_name: z
+    .string()
+    .min(2, "Họ và tên phải có ít nhất 2 ký tự")
+    .max(100, "Họ và tên không được quá 100 ký tự")
+    .optional()
+    .or(z.literal("")),
+});
+
+export type UpdateProfileFormData = z.infer<typeof updateProfileSchema>;
+
+// Change email validation
+export const changeEmailSchema = z.object({
+  new_email: z
+    .string()
+    .min(1, "Email mới là bắt buộc")
+    .email("Email không hợp lệ"),
+});
+
+export type ChangeEmailFormData = z.infer<typeof changeEmailSchema>;
+
+// Change password validation
+export const changePasswordSchema = z
+  .object({
+    current_password: z.string().min(1, "Mật khẩu hiện tại là bắt buộc"),
+    new_password: z
+      .string()
+      .min(1, "Mật khẩu mới là bắt buộc")
+      .min(8, "Mật khẩu phải có ít nhất 8 ký tự")
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])/,
+        "Mật khẩu phải có ít nhất 1 chữ thường, 1 chữ hoa, 1 số và 1 ký tự đặc biệt (@$!%*?&#)",
+      ),
+    confirm_password: z.string().min(1, "Xác nhận mật khẩu là bắt buộc"),
+  })
+  .refine((data) => data.new_password === data.confirm_password, {
+    message: "Mật khẩu không khớp",
+    path: ["confirm_password"],
+  });
+
+export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;

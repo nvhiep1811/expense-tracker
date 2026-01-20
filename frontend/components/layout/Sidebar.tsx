@@ -7,6 +7,7 @@ import {
   Target,
   DollarSign,
   Settings,
+  User,
   Sun,
   Moon,
   Monitor,
@@ -49,6 +50,12 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
       label: "Báo cáo",
       icon: DollarSign,
       href: "/dashboard/reports",
+    },
+    {
+      id: "profile",
+      label: "Hồ sơ",
+      icon: User,
+      href: "/dashboard/profile",
     },
   ];
 
@@ -125,8 +132,8 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
             {theme === "system"
               ? `Theo hệ thống (${resolvedTheme === "dark" ? "Tối" : "Sáng"})`
               : theme === "dark"
-              ? "Chế độ tối"
-              : "Chế độ sáng"}
+                ? "Chế độ tối"
+                : "Chế độ sáng"}
           </p>
         </div>
       </div>

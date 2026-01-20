@@ -27,7 +27,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden w-full">
+      <div className="flex-1 flex flex-col w-full overflow-y-auto">
         {/* Mobile menu button */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
