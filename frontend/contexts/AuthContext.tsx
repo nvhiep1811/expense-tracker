@@ -8,9 +8,10 @@ import {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { authAPI, profilesAPI } from "@/lib/api";
 import { setCookie, getCookie, deleteCookie } from "@/lib/cookies";
 import toast from "react-hot-toast";
+import { authAPI, profilesAPI } from "@/lib/api";
+import { logger } from "@/lib/logger";
 
 interface User {
   id: string;
@@ -33,9 +34,34 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    // Try to restore user from localStorage on mount
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("user_data");
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch {
+          localStorage.removeItem("user_data");
+        }
+      }
+    }
+    return null;
+  });
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+
+  // Helper to save user data
+  const saveUserData = (userData: User | null) => {
+    setUser(userData);
+    if (typeof window !== "undefined") {
+      if (userData) {
+        localStorage.setItem("user_data", JSON.stringify(userData));
+      } else {
+        localStorage.removeItem("user_data");
+      }
+    }
+  };
 
   useEffect(() => {
     checkAuth();
@@ -45,7 +71,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const token = getCookie("access_token");
       if (!token) {
+        saveUserData(null);
         setIsLoading(false);
+        return;
+      }
+
+      // If we have cached user, return it immediately and update in background
+      const cached =
+        typeof window !== "undefined"
+          ? localStorage.getItem("user_data")
+          : null;
+      if (cached && user) {
+        setIsLoading(false);
+        // Optionally refresh in background
+        refreshUserInBackground();
         return;
       }
 
@@ -53,19 +92,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const profile = await profilesAPI.getMyProfile();
 
       if (profile) {
-        setUser({
+        const userData = {
           id: profile.id,
           name: profile.full_name || "User",
           email: profile.email || "",
           avatarUrl: profile.avatar_url || undefined,
-        });
+        };
+        saveUserData(userData);
       }
     } catch (error) {
-      console.error("Auth check failed:", error);
+      logger.error("Auth check failed", error, { context: "checkAuth" });
       // Clear invalid token
       deleteCookie("access_token");
+      saveUserData(null);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Background refresh without setting loading state
+  const refreshUserInBackground = async () => {
+    try {
+      const profile = await profilesAPI.getMyProfile();
+      if (profile) {
+        const userData = {
+          id: profile.id,
+          name: profile.full_name || "User",
+          email: profile.email || "",
+          avatarUrl: profile.avatar_url || undefined,
+        };
+        saveUserData(userData);
+      }
+    } catch (error) {
+      logger.error("Background refresh failed", error, {
+        context: "refreshUserInBackground",
+      });
     }
   };
 
@@ -84,11 +145,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = {
           id: profile.id,
           name: profile.full_name || "User",
-          email: response.session.user.email || "",
+          email: response.session.user.email || profile.email || "",
           avatarUrl: profile.avatar_url || undefined,
         };
 
-        setUser(userData);
+        saveUserData(userData);
 
         toast.success(response.message || "Đăng nhập thành công!");
         router.push("/dashboard");
@@ -97,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast.error(response.message || "Đăng nhập thất bại.");
       }
     } catch (error) {
-      console.error("Login failed:", error);
+      logger.error("Login failed", error, { context: "login" });
       throw error;
     }
   };
@@ -119,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
       router.push("/login");
     } catch (error) {
-      console.error("Registration failed:", error);
+      logger.error("Registration failed", error, { context: "register" });
       throw error;
     }
   };
@@ -130,15 +191,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       deleteCookie("access_token");
       deleteCookie("refresh_token");
-      setUser(null);
+      saveUserData(null);
 
       toast.success(response.message || "Đã đăng xuất thành công!");
       router.push("/");
     } catch (error) {
-      console.error("Logout failed:", error);
+      logger.error("Logout failed", error, { context: "logout" });
       deleteCookie("access_token");
       deleteCookie("refresh_token");
-      setUser(null);
+      saveUserData(null);
       toast.error("Đăng xuất thất bại!");
       router.push("/");
     }
@@ -148,25 +209,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const token = getCookie("access_token");
       if (!token) {
-        setUser(null);
+        saveUserData(null);
         return;
       }
 
       const profile = await profilesAPI.getMyProfile();
 
       if (profile) {
-        setUser({
+        const userData = {
           id: profile.id,
           name: profile.full_name || "User",
-          email: profile.email || "",
+          email: profile.email || user?.email || "",
           avatarUrl: profile.avatar_url || undefined,
-        });
+        };
+        saveUserData(userData);
       }
     } catch (error) {
-      console.error("Failed to refresh user:", error);
+      logger.error("Failed to refresh user", error, { context: "refreshUser" });
       deleteCookie("access_token");
       deleteCookie("refresh_token");
-      setUser(null);
+      saveUserData(null);
     }
   };
 
@@ -179,7 +241,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error("Invalid OAuth response");
       }
     } catch (error) {
-      console.error("Google login failed:", error);
+      logger.error("Google login failed", error, {
+        context: "loginWithGoogle",
+      });
       toast.error("Không thể đăng nhập bằng Google. Vui lòng thử lại!");
       throw error;
     }
@@ -194,7 +258,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error("Invalid OAuth response");
       }
     } catch (error) {
-      console.error("Facebook login failed:", error);
+      logger.error("Facebook login failed", error, {
+        context: "loginWithFacebook",
+      });
       toast.error("Không thể đăng nhập bằng Facebook. Vui lòng thử lại!");
       throw error;
     }

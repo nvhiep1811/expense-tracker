@@ -20,14 +20,31 @@ export class ProfilesService extends BaseService {
 
   async getProfile(userId: string, accessToken: string): Promise<Profile> {
     const supabase = this.getAuthenticatedClient(accessToken);
-    const { data, error } = await supabase
+
+    // Get profile data
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
 
-    if (error) throw error;
-    return data as Profile;
+    if (profileError) throw profileError;
+
+    // Get user email from auth.users
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError) {
+      this.logger.warn('Could not fetch user email', userError);
+    }
+
+    // Combine profile data with email
+    return {
+      ...profileData,
+      email: user?.email || undefined,
+    } as Profile;
   }
 
   async updateProfile(

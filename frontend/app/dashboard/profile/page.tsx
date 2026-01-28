@@ -50,6 +50,7 @@ export default function ProfilePage() {
     handleSubmit: handleSubmitEmail,
     formState: { errors: emailErrors },
     reset: resetEmail,
+    setValue: setEmailValue,
   } = useForm<ChangeEmailFormData>({
     resolver: zodResolver(changeEmailSchema),
   });
@@ -69,13 +70,14 @@ export default function ProfilePage() {
       const data = await profilesAPI.getMyProfile();
       setProfile(data);
       setProfileValue("full_name", data.full_name || "");
+      setEmailValue("new_email", data.email || user?.email || "");
       setAvatarPreview(data.avatar_url || null);
     } catch {
       toast.error("Không thể tải thông tin profile.");
     } finally {
       setLoading(false);
     }
-  }, [setProfileValue]);
+  }, [setProfileValue, setEmailValue, user?.email]);
 
   useEffect(() => {
     fetchProfile();
