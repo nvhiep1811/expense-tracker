@@ -7,8 +7,10 @@ import {
   Body,
   Param,
   UseGuards,
+  UseInterceptors,
   Req,
 } from '@nestjs/common';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { CategoriesService } from './categories.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
@@ -23,6 +25,8 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Get()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(300000)
   async findAll(
     @CurrentUser() user: User,
     @Req() request: Request,
