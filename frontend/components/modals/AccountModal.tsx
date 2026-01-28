@@ -84,7 +84,6 @@ export default function AccountModal({
               <option value="cash">Tiền mặt</option>
               <option value="bank">Ngân hàng</option>
               <option value="e_wallet">Ví điện tử</option>
-              <option value="credit_card">Thẻ tín dụng</option>
             </select>
             {errors.type && (
               <p className="mt-1 text-sm text-red-600">{errors.type.message}</p>

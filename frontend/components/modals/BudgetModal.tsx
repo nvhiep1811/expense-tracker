@@ -3,56 +3,37 @@
 import { X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { transactionSchema, type TransactionFormData } from "@/lib/validations";
+import { budgetSchema, type BudgetFormData } from "@/lib/validations";
+import type { Category } from "@/types";
 
-interface Account {
-  id: string;
-  name: string;
-  type: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  side: "income" | "expense";
-}
-
-interface TransactionModalProps {
+interface BudgetModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: TransactionFormData) => void;
-  accounts: Account[];
+  onSubmit: (data: BudgetFormData) => void;
   categories: Category[];
 }
 
-export default function TransactionModal({
+export default function BudgetModal({
   isOpen,
   onClose,
   onSubmit: handleFormSubmit,
-  accounts,
   categories,
-}: TransactionModalProps) {
+}: BudgetModalProps) {
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
-    watch,
-  } = useForm<TransactionFormData>({
-    resolver: zodResolver(transactionSchema),
+  } = useForm<BudgetFormData>({
+    resolver: zodResolver(budgetSchema),
     defaultValues: {
-      type: "expense",
-      date: new Date().toISOString().split("T")[0],
+      period: "monthly",
+      alert_threshold: 80,
+      rollover: false,
     },
   });
 
-  const transactionType = watch("type");
-
-  const filteredCategories = categories.filter(
-    (cat) => cat.side === transactionType,
-  );
-
-  const onSubmit = (data: TransactionFormData) => {
+  const onSubmit = (data: BudgetFormData) => {
     handleFormSubmit(data);
     reset();
     onClose();
@@ -60,11 +41,14 @@ export default function TransactionModal({
 
   if (!isOpen) return null;
 
+  // Filter only expense categories
+  const expenseCategories = categories.filter((cat) => cat.side === "expense");
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-card-bg rounded-xl max-w-md w-full p-6 border border-card-border">
+      <div className="bg-card-bg rounded-xl max-w-md w-full p-6 border border-card-border max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-foreground">Thêm giao dịch</h2>
+          <h2 className="text-2xl font-bold text-foreground">Thêm ngân sách</h2>
           <button
             onClick={onClose}
             className="text-muted-text hover:text-foreground"
@@ -74,29 +58,35 @@ export default function TransactionModal({
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Type */}
+          {/* Category */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              Loại giao dịch
+              Danh mục chi tiêu
             </label>
             <select
-              {...register("type")}
+              {...register("category")}
               className={`w-full px-4 py-2 border ${
-                errors.type ? "border-red-500" : "border-input-border"
+                errors.category ? "border-red-500" : "border-input-border"
               } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
             >
-              <option value="expense">Chi tiêu</option>
-              <option value="income">Thu nhập</option>
+              <option value="">Chọn danh mục</option>
+              {expenseCategories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
             </select>
-            {errors.type && (
-              <p className="mt-1 text-sm text-red-600">{errors.type.message}</p>
+            {errors.category && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.category.message}
+              </p>
             )}
           </div>
 
           {/* Amount */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              Số tiền
+              Hạn mức (VND)
             </label>
             <input
               type="number"
@@ -113,91 +103,107 @@ export default function TransactionModal({
             )}
           </div>
 
-          {/* Category */}
+          {/* Period */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              Danh mục
+              Kỳ hạn
             </label>
             <select
-              {...register("category")}
+              {...register("period")}
               className={`w-full px-4 py-2 border ${
-                errors.category ? "border-red-500" : "border-input-border"
+                errors.period ? "border-red-500" : "border-input-border"
               } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
             >
-              <option value="">Chọn danh mục</option>
-              {filteredCategories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
+              <option value="weekly">Hàng tuần</option>
+              <option value="monthly">Hàng tháng</option>
+              <option value="yearly">Hàng năm</option>
             </select>
-            {errors.category && (
+            {errors.period && (
               <p className="mt-1 text-sm text-red-600">
-                {errors.category.message}
+                {errors.period.message}
               </p>
             )}
           </div>
 
-          {/* Account */}
+          {/* Start Date */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              Tài khoản
-            </label>
-            <select
-              {...register("account")}
-              className={`w-full px-4 py-2 border ${
-                errors.account ? "border-red-500" : "border-input-border"
-              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
-            >
-              <option value="">Chọn tài khoản</option>
-              {accounts.map((acc) => (
-                <option key={acc.id} value={acc.id}>
-                  {acc.name}
-                </option>
-              ))}
-            </select>
-            {errors.account && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.account.message}
-              </p>
-            )}
-          </div>
-
-          {/* Date */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Ngày
+              Ngày bắt đầu
             </label>
             <input
               type="date"
-              {...register("date")}
+              {...register("start_date")}
               className={`w-full px-4 py-2 border ${
-                errors.date ? "border-red-500" : "border-input-border"
+                errors.start_date ? "border-red-500" : "border-input-border"
               } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
             />
-            {errors.date && (
-              <p className="mt-1 text-sm text-red-600">{errors.date.message}</p>
+            {errors.start_date && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.start_date.message}
+              </p>
             )}
           </div>
 
-          {/* Description */}
+          {/* End Date */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              Mô tả (không bắt buộc)
+              Ngày kết thúc
             </label>
-            <textarea
-              {...register("description")}
-              rows={3}
+            <input
+              type="date"
+              {...register("end_date")}
               className={`w-full px-4 py-2 border ${
-                errors.description ? "border-red-500" : "border-input-border"
+                errors.end_date ? "border-red-500" : "border-input-border"
               } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
-              placeholder="Nhập mô tả..."
             />
-            {errors.description && (
+            {errors.end_date && (
               <p className="mt-1 text-sm text-red-600">
-                {errors.description.message}
+                {errors.end_date.message}
               </p>
             )}
+          </div>
+
+          {/* Alert Threshold */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Ngưỡng cảnh báo (%)
+            </label>
+            <input
+              type="number"
+              {...register("alert_threshold", { valueAsNumber: true })}
+              className={`w-full px-4 py-2 border ${
+                errors.alert_threshold
+                  ? "border-red-500"
+                  : "border-input-border"
+              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
+              placeholder="80"
+              min="1"
+              max="100"
+            />
+            {errors.alert_threshold && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.alert_threshold.message}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-muted-text">
+              Bạn sẽ nhận cảnh báo khi chi tiêu đạt ngưỡng này
+            </p>
+          </div>
+
+          {/* Rollover */}
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              {...register("rollover")}
+              id="rollover"
+              className="w-4 h-4 text-blue-600 bg-input-bg border-input-border rounded focus:ring-blue-500"
+            />
+            <label
+              htmlFor="rollover"
+              className="ml-2 text-sm text-foreground cursor-pointer"
+            >
+              Chuyển số dư còn lại sang kỳ tiếp theo
+            </label>
           </div>
 
           {/* Buttons */}
