@@ -5,23 +5,27 @@ import {
   IsNumber,
   IsUUID,
   IsDateString,
+  IsEnum,
+  IsBoolean,
   Min,
+  Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class CreateBudgetDto {
-  @IsNotEmpty({ message: 'Tên ngân sách không được để trống' })
-  @IsString()
-  name: string;
+export enum BudgetPeriod {
+  WEEKLY = 'weekly',
+  MONTHLY = 'monthly',
+  YEARLY = 'yearly',
+}
 
+export class CreateBudgetDto {
   @IsNotEmpty({ message: 'Danh mục không được để trống' })
   @IsUUID('4', { message: 'ID danh mục không hợp lệ' })
   category_id: string;
 
-  @IsNumber({}, { message: 'Số tiền phải là số' })
-  @Type(() => Number)
-  @Min(0.01, { message: 'Số tiền phải lớn hơn 0' })
-  amount: number;
+  @IsNotEmpty({ message: 'Kỳ hạn không được để trống' })
+  @IsEnum(BudgetPeriod, { message: 'Kỳ hạn không hợp lệ' })
+  period: BudgetPeriod;
 
   @IsNotEmpty({ message: 'Ngày bắt đầu không được để trống' })
   @IsDateString({}, { message: 'Ngày bắt đầu không hợp lệ' })
@@ -31,25 +35,31 @@ export class CreateBudgetDto {
   @IsDateString({}, { message: 'Ngày kết thúc không hợp lệ' })
   end_date: string;
 
+  @IsNumber({}, { message: 'Số tiền phải là số' })
+  @Type(() => Number)
+  @Min(0, { message: 'Số tiền không được âm' })
+  limit_amount: number;
+
   @IsOptional()
-  @IsString()
-  notes?: string;
+  @IsNumber({}, { message: 'Ngưỡng cảnh báo phải là số' })
+  @Type(() => Number)
+  @Min(1, { message: 'Ngưỡng cảnh báo phải từ 1-100' })
+  @Max(100, { message: 'Ngưỡng cảnh báo phải từ 1-100' })
+  alert_threshold_pct?: number;
+
+  @IsOptional()
+  @IsBoolean({ message: 'Rollover phải là boolean' })
+  rollover?: boolean;
 }
 
 export class UpdateBudgetDto {
-  @IsOptional()
-  @IsString()
-  name?: string;
-
   @IsOptional()
   @IsUUID('4', { message: 'ID danh mục không hợp lệ' })
   category_id?: string;
 
   @IsOptional()
-  @IsNumber({}, { message: 'Số tiền phải là số' })
-  @Type(() => Number)
-  @Min(0.01, { message: 'Số tiền phải lớn hơn 0' })
-  amount?: number;
+  @IsEnum(BudgetPeriod, { message: 'Kỳ hạn không hợp lệ' })
+  period?: BudgetPeriod;
 
   @IsOptional()
   @IsDateString({}, { message: 'Ngày bắt đầu không hợp lệ' })
@@ -60,6 +70,19 @@ export class UpdateBudgetDto {
   end_date?: string;
 
   @IsOptional()
-  @IsString()
-  notes?: string;
+  @IsNumber({}, { message: 'Số tiền phải là số' })
+  @Type(() => Number)
+  @Min(0, { message: 'Số tiền không được âm' })
+  limit_amount?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'Ngưỡng cảnh báo phải là số' })
+  @Type(() => Number)
+  @Min(1, { message: 'Ngưỡng cảnh báo phải từ 1-100' })
+  @Max(100, { message: 'Ngưỡng cảnh báo phải từ 1-100' })
+  alert_threshold_pct?: number;
+
+  @IsOptional()
+  @IsBoolean({ message: 'Rollover phải là boolean' })
+  rollover?: boolean;
 }

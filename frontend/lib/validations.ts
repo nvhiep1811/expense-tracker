@@ -65,7 +65,7 @@ export const accountSchema = z.object({
     .min(1, "Tên tài khoản là bắt buộc")
     .min(2, "Tên tài khoản phải có ít nhất 2 ký tự")
     .max(100, "Tên tài khoản không được quá 100 ký tự"),
-  type: z.enum(["cash", "bank", "e_wallet", "credit_card"], {
+  type: z.enum(["cash", "bank", "e_wallet"], {
     message: "Loại tài khoản không hợp lệ",
   }),
   balance: z
@@ -86,9 +86,19 @@ export const budgetSchema = z.object({
       message: "Số tiền phải là số",
     })
     .positive("Số tiền phải lớn hơn 0"),
-  period: z.enum(["monthly", "quarterly", "yearly"], {
+  period: z.enum(["weekly", "monthly", "yearly"], {
     message: "Kỳ hạn không hợp lệ",
   }),
+  start_date: z.string().min(1, "Ngày bắt đầu là bắt buộc"),
+  end_date: z.string().min(1, "Ngày kết thúc là bắt buộc"),
+  alert_threshold: z
+    .number({
+      message: "Ngưỡng cảnh báo phải là số",
+    })
+    .min(1, "Ngưỡng cảnh báo phải từ 1-100")
+    .max(100, "Ngưỡng cảnh báo phải từ 1-100")
+    .optional(),
+  rollover: z.boolean().optional(),
 });
 
 export type BudgetFormData = z.infer<typeof budgetSchema>;

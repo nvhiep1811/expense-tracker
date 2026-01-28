@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsEnum,
   IsNumber,
+  IsBoolean,
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -11,10 +12,7 @@ import { Type } from 'class-transformer';
 export enum AccountType {
   CASH = 'cash',
   BANK = 'bank',
-  CREDIT_CARD = 'credit_card',
-  DIGITAL_WALLET = 'digital_wallet',
-  INVESTMENT = 'investment',
-  OTHER = 'other',
+  E_WALLET = 'e_wallet',
 }
 
 export class CreateAccountDto {
@@ -29,7 +27,7 @@ export class CreateAccountDto {
   @IsNumber({}, { message: 'Số dư phải là số' })
   @Type(() => Number)
   @Min(0, { message: 'Số dư không được âm' })
-  balance: number;
+  opening_balance: number;
 
   @IsOptional()
   @IsString()
@@ -37,7 +35,7 @@ export class CreateAccountDto {
 
   @IsOptional()
   @IsString()
-  description?: string;
+  color?: string;
 }
 
 export class UpdateAccountDto {
@@ -50,16 +48,14 @@ export class UpdateAccountDto {
   type?: AccountType;
 
   @IsOptional()
-  @IsNumber({}, { message: 'Số dư phải là số' })
-  @Type(() => Number)
-  @Min(0, { message: 'Số dư không được âm' })
-  balance?: number;
-
-  @IsOptional()
   @IsString()
   currency?: string;
 
   @IsOptional()
   @IsString()
-  description?: string;
+  color?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  is_archived?: boolean;
 }

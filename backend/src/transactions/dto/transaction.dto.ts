@@ -9,10 +9,12 @@ import {
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { PaginationDto } from '../../common/dto/pagination.dto';
 
 export enum TransactionType {
   INCOME = 'income',
   EXPENSE = 'expense',
+  TRANSFER = 'transfer',
 }
 
 export class CreateTransactionDto {
@@ -43,7 +45,7 @@ export class CreateTransactionDto {
 
   @IsOptional()
   @IsString()
-  notes?: string;
+  note?: string;
 }
 
 export class UpdateTransactionDto {
@@ -75,10 +77,10 @@ export class UpdateTransactionDto {
 
   @IsOptional()
   @IsString()
-  notes?: string;
+  note?: string;
 }
 
-export class TransactionFiltersDto {
+export class TransactionFiltersDto extends PaginationDto {
   @IsOptional()
   @IsEnum(TransactionType)
   type?: TransactionType;
