@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Header from "@/components/layout/Header";
 import StatCard from "@/components/ui/StatCard";
-import { Wallet, TrendingUp, TrendingDown } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 import {
   PieChart,
   Pie,
@@ -17,148 +17,143 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { budgetsAPI, dashboardAPI, transactionsAPI } from "@/lib/api";
+import toast from "react-hot-toast";
+import type { Budget, BudgetWithSpending, Transaction } from "@/types";
+import type { DashboardStats } from "@/types/dashboard";
+import { useCurrency } from "@/hooks/useCurrency";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
-  // Mock data
-  const [accounts] = useState([
-    {
-      id: 1,
-      name: "Ví tiền mặt",
-      type: "cash",
-      balance: 5420000,
-      color: "#10b981",
-    },
-    {
-      id: 2,
-      name: "Techcombank",
-      type: "bank",
-      balance: 25800000,
-      color: "#3b82f6",
-    },
-    {
-      id: 3,
-      name: "Momo",
-      type: "e_wallet",
-      balance: 1250000,
-      color: "#ec4899",
-    },
-  ]);
+  const router = useRouter();
+  const formatCurrency = useCurrency();
+  const [loading, setLoading] = useState(true);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(
+    null,
+  );
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>(
+    [],
+  );
 
-  const [transactions] = useState([
-    {
-      id: 1,
-      type: "expense",
-      amount: 350000,
-      category: "Ăn uống",
-      date: "2026-01-06",
-      account: "Momo",
-      description: "Ăn trưa văn phòng",
-    },
-    {
-      id: 2,
-      type: "expense",
-      amount: 1200000,
-      category: "Mua sắm",
-      date: "2026-01-05",
-      account: "Techcombank",
-      description: "Mua quần áo",
-    },
-    {
-      id: 3,
-      type: "income",
-      amount: 15000000,
-      category: "Lương",
-      date: "2026-01-01",
-      account: "Techcombank",
-      description: "Lương tháng 1",
-    },
-    {
-      id: 4,
-      type: "expense",
-      amount: 450000,
-      category: "Di chuyển",
-      date: "2026-01-04",
-      account: "Ví tiền mặt",
-      description: "Grab",
-    },
-    {
-      id: 5,
-      type: "expense",
-      amount: 2500000,
-      category: "Hóa đơn",
-      date: "2026-01-03",
-      account: "Techcombank",
-      description: "Tiền điện nước",
-    },
-  ]);
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-  const [categories] = useState([
-    {
-      name: "Ăn uống",
-      spent: 2450000,
-      budget: 5000000,
-      color: "#f59e0b",
-      icon: "🍔",
-    },
-    {
-      name: "Mua sắm",
-      spent: 3200000,
-      budget: 4000000,
-      color: "#8b5cf6",
-      icon: "🛍️",
-    },
-    {
-      name: "Di chuyển",
-      spent: 1250000,
-      budget: 2000000,
-      color: "#06b6d4",
-      icon: "🚗",
-    },
-    {
-      name: "Hóa đơn",
-      spent: 2500000,
-      budget: 3000000,
-      color: "#ef4444",
-      icon: "📄",
-    },
-    {
-      name: "Giải trí",
-      spent: 800000,
-      budget: 2000000,
-      color: "#ec4899",
-      icon: "🎮",
-    },
-  ]);
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      // Use optimized dashboard API with database views
+      const [budgetsData, statsData, transactionsData] = await Promise.all([
+        budgetsAPI.getAll(),
+        dashboardAPI.getStats(), // NEW: Uses database views for performance
+        transactionsAPI.getAll({ limit: 10 }), // Get recent transactions
+      ]);
 
-  const monthlyData = [
-    { month: "T7", income: 15000000, expense: 8500000 },
-    { month: "T8", income: 15000000, expense: 9200000 },
-    { month: "T9", income: 15500000, expense: 8800000 },
-    { month: "T10", income: 15000000, expense: 10500000 },
-    { month: "T11", income: 16000000, expense: 9800000 },
-    { month: "T12", income: 15000000, expense: 11200000 },
-    { month: "T1", income: 15000000, expense: 10400000 },
-  ];
-
-  const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
-  const totalIncome = transactions
-    .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0);
-  const totalExpense = transactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
+      setBudgets(budgetsData);
+      setDashboardStats(statsData);
+      setRecentTransactions(transactionsData.data);
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Không thể tải dữ liệu dashboard",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const categoryChartData = categories.map((cat) => ({
-    name: cat.name,
-    value: cat.spent,
-  }));
+  // Statistics from optimized API
+  const totalBalance = dashboardStats?.netWorth || 0;
+  const totalIncome = dashboardStats?.currentMonth.income || 0;
+  const totalExpense = dashboardStats?.currentMonth.expense || 0;
+
+  // Category spending data for pie chart (from database view)
+  const categorySpending = useMemo(() => {
+    if (!dashboardStats?.categorySpending) return [];
+
+    return dashboardStats.categorySpending
+      .sort((a, b) => b.spent - a.spent)
+      .slice(0, 5)
+      .map((cat) => ({
+        name: cat.category_name || "Unknown",
+        value: cat.spent,
+        color: cat.color || "#64748b",
+      }));
+  }, [dashboardStats]);
+
+  // Monthly income vs expense chart (from database view)
+  const monthlyData = useMemo(() => {
+    if (!dashboardStats?.monthlyCashflow) return [];
+
+    return dashboardStats.monthlyCashflow.map((data) => {
+      const date = new Date(data.month);
+      return {
+        month: `T${date.getMonth() + 1}`,
+        income: data.income,
+        expense: data.expense,
+      };
+    });
+  }, [dashboardStats]);
+
+  // Calculate budget spending
+  const budgetsWithSpending = useMemo<BudgetWithSpending[]>(() => {
+    if (!dashboardStats?.categorySpending) return [];
+
+    return budgets.map((budget) => {
+      const categoryData = dashboardStats.categorySpending.find(
+        (c) => c.category_id === budget.category_id,
+      );
+      const spent = categoryData?.spent || 0;
+      const remaining = budget.limit_amount - spent;
+      const percentage = (spent / budget.limit_amount) * 100;
+
+      return {
+        ...budget,
+        spent,
+        remaining,
+        percentage,
+        category: categoryData
+          ? {
+              id: budget.category_id,
+              user_id: budget.user_id,
+              name: categoryData.category_name || "Unknown",
+              side: "expense" as const,
+              color: categoryData.color,
+              sort_order: 0,
+              created_at: budget.created_at,
+              updated_at: budget.updated_at,
+            }
+          : undefined,
+      };
+    });
+  }, [budgets, dashboardStats]);
+
+  // Get category name from dashboard stats
+  const getCategoryName = (categoryId?: string) => {
+    if (!categoryId) return "Không danh mục";
+    const category = dashboardStats?.categorySpending.find(
+      (c) => c.category_id === categoryId,
+    );
+    return category?.category_name || "N/A";
+  };
+
+  // Use recent transactions instead of currentMonthTransactions
+  const currentMonthTransactions = recentTransactions;
+
+  if (loading) {
+    return (
+      <>
+        <Header title="Tổng quan" subtitle="Đang tải dữ liệu..." />
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          </div>
+        </main>
+      </>
+    );
+  }
 
   return (
     <>
@@ -171,7 +166,7 @@ export default function DashboardPage() {
             year: "numeric",
             month: "long",
             day: "numeric",
-          }
+          },
         )}`}
       />
 
@@ -212,42 +207,49 @@ export default function DashboardPage() {
               <h3 className="text-lg font-semibold text-foreground mb-4">
                 Chi tiêu theo danh mục
               </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={categoryChartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {categoryChartData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={categories[index].color}
+              {categorySpending.length === 0 ? (
+                <div className="flex items-center justify-center h-72 text-muted-text">
+                  Chưa có dữ liệu chi tiêu
+                </div>
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={categorySpending}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {categorySpending.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number | undefined) =>
+                          value ? formatCurrency(value) : "0đ"
+                        }
                       />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    {categorySpending.map((cat, idx) => (
+                      <div key={idx} className="flex items-center space-x-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: cat.color }}
+                        ></div>
+                        <span className="text-sm text-muted-text">
+                          {cat.name}
+                        </span>
+                      </div>
                     ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: number | undefined) =>
-                      value ? formatCurrency(value) : "0đ"
-                    }
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="grid grid-cols-2 gap-3 mt-4">
-                {categories.map((cat, idx) => (
-                  <div key={idx} className="flex items-center space-x-2">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: cat.color }}
-                    ></div>
-                    <span className="text-sm text-muted-text">{cat.name}</span>
                   </div>
-                ))}
-              </div>
+                </>
+              )}
             </div>
 
             {/* Income vs Expense */}
@@ -259,7 +261,15 @@ export default function DashboardPage() {
                 <BarChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis dataKey="month" stroke="#9ca3af" />
-                  <YAxis stroke="#9ca3af" />
+                  <YAxis
+                    stroke="#9ca3af"
+                    tickFormatter={(value) => {
+                      if (value >= 1000000)
+                        return `${(value / 1000000).toFixed(1)}tr`;
+                      if (value >= 1000) return `${(value / 1000).toFixed(0)}k`;
+                      return value.toString();
+                    }}
+                  />
                   <Tooltip
                     formatter={(value: number | undefined) =>
                       value ? formatCurrency(value) : "0đ"
@@ -291,49 +301,62 @@ export default function DashboardPage() {
                 <h3 className="text-lg font-semibold text-foreground">
                   Giao dịch gần đây
                 </h3>
-                <button className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
+                <button
+                  onClick={() => router.push("/dashboard/transactions")}
+                  className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                >
                   Xem tất cả
                 </button>
               </div>
               <div className="space-y-3">
-                {transactions.slice(0, 5).map((tx) => (
-                  <div
-                    key={tx.id}
-                    className="flex items-center justify-between p-3 bg-hover-bg rounded-lg"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div
-                        className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                {currentMonthTransactions.length === 0 ? (
+                  <div className="text-center py-8 text-muted-text">
+                    Chưa có giao dịch nào
+                  </div>
+                ) : (
+                  currentMonthTransactions.slice(0, 5).map((tx) => (
+                    <div
+                      key={tx.id}
+                      className="flex items-center justify-between p-3 bg-hover-bg rounded-lg"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            tx.type === "income"
+                              ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
+                              : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                          }`}
+                        >
+                          {tx.type === "income" ? (
+                            <TrendingUp className="w-5 h-5" />
+                          ) : (
+                            <TrendingDown className="w-5 h-5" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {getCategoryName(tx.category_id)}
+                          </p>
+                          <p className="text-sm text-muted-text">
+                            {new Date(tx.occurred_on).toLocaleDateString(
+                              "vi-VN",
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className={`font-semibold ${
                           tx.type === "income"
-                            ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
-                            : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                            ? "text-green-600 dark:text-green-400"
+                            : "text-red-600 dark:text-red-400"
                         }`}
                       >
-                        {tx.type === "income" ? (
-                          <TrendingUp className="w-5 h-5" />
-                        ) : (
-                          <TrendingDown className="w-5 h-5" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {tx.category}
-                        </p>
-                        <p className="text-sm text-muted-text">{tx.date}</p>
-                      </div>
+                        {tx.type === "income" ? "+" : "-"}
+                        {formatCurrency(tx.amount)}
+                      </span>
                     </div>
-                    <span
-                      className={`font-semibold ${
-                        tx.type === "income"
-                          ? "text-green-600 dark:text-green-400"
-                          : "text-red-600 dark:text-red-400"
-                      }`}
-                    >
-                      {tx.type === "income" ? "+" : "-"}
-                      {formatCurrency(tx.amount)}
-                    </span>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
 
@@ -343,42 +366,48 @@ export default function DashboardPage() {
                 <h3 className="text-lg font-semibold text-foreground">
                   Ngân sách tháng này
                 </h3>
-                <button className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
+                <button
+                  onClick={() => router.push("/dashboard/budgets")}
+                  className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                >
                   Chi tiết
                 </button>
               </div>
               <div className="space-y-4">
-                {categories.map((cat, idx) => {
-                  const percentage = (cat.spent / cat.budget) * 100;
-                  return (
-                    <div key={idx}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xl">{cat.icon}</span>
+                {budgetsWithSpending.length === 0 ? (
+                  <div className="text-center py-8 text-muted-text">
+                    Chưa có ngân sách nào
+                  </div>
+                ) : (
+                  budgetsWithSpending.slice(0, 5).map((budget) => {
+                    const percentage = budget.percentage;
+                    return (
+                      <div key={budget.id}>
+                        <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium text-foreground">
-                            {cat.name}
+                            {budget.category?.name || "Không danh mục"}
+                          </span>
+                          <span className="text-sm text-muted-text">
+                            {formatCurrency(budget.spent)} /{" "}
+                            {formatCurrency(budget.limit_amount)}
                           </span>
                         </div>
-                        <span className="text-sm text-muted-text">
-                          {formatCurrency(cat.spent)} /{" "}
-                          {formatCurrency(cat.budget)}
-                        </span>
+                        <div className="w-full bg-hover-bg rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full transition-all ${
+                              percentage > 100
+                                ? "bg-red-500"
+                                : percentage > budget.alert_threshold_pct
+                                  ? "bg-orange-500"
+                                  : "bg-green-500"
+                            }`}
+                            style={{ width: `${Math.min(percentage, 100)}%` }}
+                          ></div>
+                        </div>
                       </div>
-                      <div className="w-full bg-hover-bg rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full transition-all ${
-                            percentage > 100
-                              ? "bg-red-500"
-                              : percentage > 80
-                              ? "bg-orange-500"
-                              : "bg-green-500"
-                          }`}
-                          style={{ width: `${Math.min(percentage, 100)}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>
