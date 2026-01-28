@@ -31,10 +31,13 @@ export default function ForgotPasswordPage() {
       const response = await authAPI.forgotPassword(data.email);
       toast.success(response.message);
       setIsSubmitted(true);
-    } catch (err: any) {
-      toast.error(
-        err?.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại sau."
-      );
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error && "response" in err
+          ? (err as Error & { response?: { data?: { message?: string } } })
+              .response?.data?.message
+          : undefined;
+      toast.error(errorMessage || "Có lỗi xảy ra. Vui lòng thử lại sau.");
     } finally {
       setIsLoading(false);
     }

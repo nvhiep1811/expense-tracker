@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { setCookie } from "@/lib/cookies";
 import { profilesAPI } from "@/lib/api";
 import toast from "react-hot-toast";
+import { logger } from "@/lib/logger";
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -37,7 +38,10 @@ export default function AuthCallback() {
 
         // Xử lý lỗi
         if (error) {
-          console.error("Auth error:", error, errorDescription);
+          logger.error("Auth error in callback", undefined, {
+            error,
+            errorDescription,
+          });
           setStatus("error");
 
           // Parse error description for better user message
@@ -56,7 +60,9 @@ export default function AuthCallback() {
 
         // Kiểm tra token
         if (!accessToken) {
-          console.error("No access token found");
+          logger.error("No access token found in callback", undefined, {
+            context: "callback",
+          });
           setStatus("error");
           toast.error("Không tìm thấy token xác thực.");
           setTimeout(() => router.push("/login"), 2000);
@@ -102,7 +108,7 @@ export default function AuthCallback() {
           try {
             await profilesAPI.getMyProfile();
           } catch (err) {
-            console.warn("Failed to fetch profile:", err);
+            logger.warn("Failed to fetch profile in callback", { error: err });
             // Continue anyway, profile will be fetched on dashboard
           }
 
@@ -120,7 +126,7 @@ export default function AuthCallback() {
           setTimeout(() => router.replace("/dashboard"), 1000);
         }
       } catch (error) {
-        console.error("Callback error:", error);
+        logger.error("Callback error", error, { context: "handleCallback" });
         setStatus("error");
         toast.error("Có lỗi xảy ra trong quá trình xác thực.");
         setTimeout(() => router.push("/login"), 2000);

@@ -60,7 +60,7 @@ export default function ResetPasswordPage() {
       // Gọi API reset password với token
       const response = await authAPI.resetPassword(
         data.newPassword,
-        accessToken
+        accessToken,
       );
 
       toast.success(response.message);
@@ -79,10 +79,14 @@ export default function ResetPasswordPage() {
       setTimeout(() => {
         router.push("/dashboard");
       }, 1000);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error && "response" in err
+          ? (err as Error & { response?: { data?: { message?: string } } })
+              .response?.data?.message
+          : undefined;
       toast.error(
-        err?.response?.data?.message ||
-          "Không thể đặt lại mật khẩu. Vui lòng thử lại."
+        errorMessage || "Không thể đặt lại mật khẩu. Vui lòng thử lại.",
       );
     } finally {
       setIsLoading(false);
