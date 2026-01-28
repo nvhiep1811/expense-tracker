@@ -21,6 +21,7 @@ import {
   TransactionFiltersDto,
 } from './dto/transaction.dto';
 import type { User, Transaction } from '../common/types/entities';
+import { PaginatedResponse } from '../common/dto/pagination.dto';
 
 @Controller('transactions')
 @UseGuards(AuthGuard)
@@ -32,7 +33,7 @@ export class TransactionsController {
     @CurrentUser() user: User,
     @Query() filters: TransactionFiltersDto,
     @Req() request: Request,
-  ): Promise<Transaction[]> {
+  ): Promise<PaginatedResponse<Transaction>> {
     const token = extractToken(request);
     return this.transactionsService.findAll(user.id, token, filters);
   }

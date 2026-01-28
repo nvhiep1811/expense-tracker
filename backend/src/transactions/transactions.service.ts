@@ -7,6 +7,7 @@ import {
   UpdateTransactionDto,
   TransactionFiltersDto,
 } from './dto/transaction.dto';
+import { PaginatedResponse } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class TransactionsService extends BaseService {
@@ -18,14 +19,20 @@ export class TransactionsService extends BaseService {
     userId: string,
     accessToken: string,
     filters?: TransactionFiltersDto,
-  ): Promise<Transaction[]> {
+  ): Promise<PaginatedResponse<Transaction>> {
     const supabase = this.getAuthenticatedClient(accessToken);
+
+    const page = filters?.page || 1;
+    const limit = filters?.limit || 20;
+    const offset = (page - 1) * limit;
+
     let query = supabase
       .from('transactions')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('user_id', userId)
       .is('deleted_at', null)
-      .order('occurred_on', { ascending: false });
+      .order('occurred_on', { ascending: false })
+      .order('created_at', { ascending: false });
 
     // Apply filters if provided
     if (filters?.type) query = query.eq('type', filters.type);
@@ -36,10 +43,22 @@ export class TransactionsService extends BaseService {
       query = query.gte('occurred_on', filters.start_date);
     if (filters?.end_date) query = query.lte('occurred_on', filters.end_date);
 
-    const { data, error } = await query;
+    // Apply pagination
+    query = query.range(offset, offset + limit - 1);
+
+    const { data, error, count } = await query;
 
     if (error) throw error;
-    return data as Transaction[];
+
+    return {
+      data: data as Transaction[],
+      meta: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
+      },
+    };
   }
 
   async findOne(
