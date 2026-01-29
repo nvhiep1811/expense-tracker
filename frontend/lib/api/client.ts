@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://api-nvh-expense-tracker.up.railway.app";
 const API_BASE_URL = `${API_URL}/api`;
 
 const api = axios.create({
