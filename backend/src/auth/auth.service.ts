@@ -67,7 +67,8 @@ export class AuthService {
 
     // Get the frontend URL from environment or use default
     const frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+      this.configService.get<string>('FRONTEND_URL') ||
+      'https://expense-tracker-nvh.vercel.app';
 
     await this.supabase.auth.signUp({
       email,
@@ -130,7 +131,8 @@ export class AuthService {
    */
   async forgotPassword(email: string) {
     const frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+      this.configService.get<string>('FRONTEND_URL') ||
+      'https://expense-tracker-nvh.vercel.app';
     const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${frontendUrl}/auth/callback`,
     });
@@ -222,7 +224,8 @@ export class AuthService {
    */
   async getOAuthUrl(provider: Provider) {
     const frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+      this.configService.get<string>('FRONTEND_URL') ||
+      'https://expense-tracker-nvh.vercel.app';
 
     const { data, error } = await this.supabase.auth.signInWithOAuth({
       provider,
