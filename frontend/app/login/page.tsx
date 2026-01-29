@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { Wallet, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,7 +10,7 @@ import { loginSchema, type LoginFormData } from "@/lib/validations";
 import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 
-export default function LoginPage() {
+function LoginForm() {
   const { login, loginWithGoogle, loginWithFacebook } = useAuth();
   const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
@@ -304,5 +304,19 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          Loading...
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }
