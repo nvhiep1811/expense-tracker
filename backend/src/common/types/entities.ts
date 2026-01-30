@@ -17,10 +17,10 @@ export interface Category {
   id: string;
   user_id: string;
   name: string;
-  type: string;
+  side: 'income' | 'expense';
   icon?: string;
   color?: string;
-  description?: string;
+  parent_id?: string;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -66,6 +66,9 @@ export interface Profile {
   email?: string;
   full_name?: string;
   avatar_url?: string;
+  default_currency: string;
+  timezone: string;
+  month_start_day: number;
   created_at: string;
   updated_at: string;
 }
@@ -73,17 +76,19 @@ export interface Profile {
 export interface RecurringRule {
   id: string;
   user_id: string;
-  name: string;
-  transaction_type: string;
+  type: 'income' | 'expense';
   amount: number;
   account_id: string;
-  category_id: string;
-  frequency: string;
-  start_date: string;
-  end_date?: string;
+  category_id?: string;
   description?: string;
+  freq: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  interval: number;
+  byweekday?: number[];
+  bymonthday?: number;
+  start_on: string;
+  end_on?: string;
+  last_generated_on?: string;
   is_active: boolean;
-  last_executed_at?: string;
   created_at: string;
   updated_at: string;
   deleted_at?: string;

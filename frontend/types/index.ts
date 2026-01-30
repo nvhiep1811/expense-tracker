@@ -153,6 +153,23 @@ export interface BudgetWithSpending extends Budget {
   category?: Category;
 }
 
+// Budget status from v_budget_status view
+export interface BudgetStatus {
+  budget_id: string;
+  user_id: string;
+  category_id: string;
+  period: "weekly" | "monthly" | "yearly";
+  start_date: string;
+  end_date: string;
+  limit_amount: number;
+  alert_threshold_pct: number;
+  category_name?: string;
+  category_color?: string;
+  spent: number;
+  remaining: number;
+  percentage: number;
+}
+
 // Pagination types
 export interface PaginationMeta {
   page: number;

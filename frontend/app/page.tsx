@@ -57,7 +57,7 @@ export default function HomePage() {
                   <p className="text-sm font-medium">Thu nhập</p>
                   <p className="text-2xl font-bold mt-2">15.000.000đ</p>
                 </div>
-                <div className="bg-linear-to-br from-red-500 to-red-600 rounded-xl p-6 text-white sm:col-span-2 lg:col-span-1">
+                <div className="bg-linear-to-br from-red-500 to-red-600 rounded-xl p-6 text-white">
                   <Target className="w-8 h-8 mb-2" />
                   <p className="text-sm font-medium">Chi tiêu</p>
                   <p className="text-2xl font-bold mt-2">10.400.000đ</p>

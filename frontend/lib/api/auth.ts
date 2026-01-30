@@ -59,6 +59,9 @@ export const profilesAPI = {
   updateMyProfile: async (data: {
     full_name?: string;
     avatar_url?: string;
+    default_currency?: string;
+    timezone?: string;
+    month_start_day?: number;
   }): Promise<Profile> => {
     const response = await api.put("/profiles/me", data);
     return response.data;

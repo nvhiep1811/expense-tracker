@@ -192,8 +192,52 @@ export default function TransactionsPage() {
                 </div>
               ) : (
                 <>
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-160">
+                  {/* Mobile Card View */}
+                  <div className="block md:hidden">
+                    <div className="divide-y divide-card-border">
+                      {filteredTransactions.map((tx) => (
+                        <div
+                          key={tx.id}
+                          className="p-4 hover:bg-hover-bg cursor-pointer"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-foreground truncate">
+                                {tx.description || "Không có mô tả"}
+                              </p>
+                              <p className="text-xs text-muted-text mt-1">
+                                {new Date(tx.occurred_on).toLocaleDateString(
+                                  "vi-VN",
+                                )}
+                              </p>
+                            </div>
+                            <span
+                              className={`text-lg font-bold whitespace-nowrap ml-3 ${
+                                tx.type === "income"
+                                  ? "text-green-600 dark:text-green-400"
+                                  : "text-red-600 dark:text-red-400"
+                              }`}
+                            >
+                              {tx.type === "income" ? "+" : "-"}
+                              {formatCurrency(tx.amount)}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <span className="inline-flex items-center px-2.5 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                              {getCategoryName(tx.category_id)}
+                            </span>
+                            <span className="inline-flex items-center px-2.5 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                              {getAccountName(tx.account_id)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full">
                       <thead className="bg-hover-bg border-b border-card-border">
                         <tr>
                           <th className="px-6 py-4 text-left text-sm font-semibold text-muted-text">
@@ -219,7 +263,7 @@ export default function TransactionsPage() {
                             key={tx.id}
                             className="hover:bg-hover-bg cursor-pointer"
                           >
-                            <td className="px-6 py-4 text-sm text-muted-text">
+                            <td className="px-6 py-4 text-sm text-muted-text whitespace-nowrap">
                               {new Date(tx.occurred_on).toLocaleDateString(
                                 "vi-VN",
                               )}
@@ -228,7 +272,7 @@ export default function TransactionsPage() {
                               {tx.description || "Không có mô tả"}
                             </td>
                             <td className="px-6 py-4">
-                              <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                              <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 whitespace-nowrap">
                                 {getCategoryName(tx.category_id)}
                               </span>
                             </td>
@@ -236,7 +280,7 @@ export default function TransactionsPage() {
                               {getAccountName(tx.account_id)}
                             </td>
                             <td
-                              className={`px-6 py-4 text-sm font-semibold text-right ${
+                              className={`px-6 py-4 text-sm font-semibold text-right whitespace-nowrap ${
                                 tx.type === "income"
                                   ? "text-green-600 dark:text-green-400"
                                   : "text-red-600 dark:text-red-400"
@@ -252,14 +296,16 @@ export default function TransactionsPage() {
                   </div>
 
                   {/* Pagination */}
-                  <Pagination
-                    pagination={pagination}
-                    page={page}
-                    limit={limit}
-                    onPageChange={setPage}
-                    onLimitChange={setLimit}
-                    itemName="giao dịch"
-                  />
+                  <div className="border-t border-card-border">
+                    <Pagination
+                      pagination={pagination}
+                      page={page}
+                      limit={limit}
+                      onPageChange={setPage}
+                      onLimitChange={setLimit}
+                      itemName="giao dịch"
+                    />
+                  </div>
                 </>
               )}
             </div>
@@ -273,6 +319,7 @@ export default function TransactionsPage() {
           onSubmit={handleAddTransaction}
           accounts={accounts}
           categories={categories}
+          onAccountCreated={fetchAccounts}
         />
       </main>
     </>

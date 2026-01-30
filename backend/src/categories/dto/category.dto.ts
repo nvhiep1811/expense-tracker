@@ -1,6 +1,6 @@
 import { IsString, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
 
-export enum CategoryType {
+export enum CategorySide {
   INCOME = 'income',
   EXPENSE = 'expense',
 }
@@ -11,8 +11,8 @@ export class CreateCategoryDto {
   name: string;
 
   @IsNotEmpty({ message: 'Loại danh mục không được để trống' })
-  @IsEnum(CategoryType, { message: 'Loại danh mục không hợp lệ' })
-  type: CategoryType;
+  @IsEnum(CategorySide, { message: 'Loại danh mục không hợp lệ' })
+  side: CategorySide;
 
   @IsOptional()
   @IsString()
@@ -21,10 +21,6 @@ export class CreateCategoryDto {
   @IsOptional()
   @IsString()
   color?: string;
-
-  @IsOptional()
-  @IsString()
-  description?: string;
 }
 
 export class UpdateCategoryDto {
@@ -33,8 +29,8 @@ export class UpdateCategoryDto {
   name?: string;
 
   @IsOptional()
-  @IsEnum(CategoryType, { message: 'Loại danh mục không hợp lệ' })
-  type?: CategoryType;
+  @IsEnum(CategorySide, { message: 'Loại danh mục không hợp lệ' })
+  side?: CategorySide;
 
   @IsOptional()
   @IsString()
@@ -43,8 +39,4 @@ export class UpdateCategoryDto {
   @IsOptional()
   @IsString()
   color?: string;
-
-  @IsOptional()
-  @IsString()
-  description?: string;
 }

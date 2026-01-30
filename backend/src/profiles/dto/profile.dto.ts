@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsEmail, MinLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEmail,
+  MinLength,
+  IsInt,
+  Min,
+  Max,
+} from 'class-validator';
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -8,6 +16,20 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   avatar_url?: string;
+
+  @IsOptional()
+  @IsString()
+  default_currency?: string;
+
+  @IsOptional()
+  @IsString()
+  timezone?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(28)
+  month_start_day?: number;
 }
 
 export class ChangeEmailDto {

@@ -14,7 +14,9 @@ export class CategoriesService extends BaseService {
     const supabase = this.getAuthenticatedClient(accessToken);
     const { data, error } = await supabase
       .from('categories')
-      .select('*')
+      .select(
+        'id, user_id, name, side, icon, color, sort_order, created_at, updated_at, deleted_at',
+      )
       .eq('user_id', userId)
       .is('deleted_at', null)
       .order('sort_order', { ascending: true });

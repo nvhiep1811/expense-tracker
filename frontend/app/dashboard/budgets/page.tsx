@@ -1,41 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Header from "@/components/layout/Header";
 import { Target, Plus, Loader2, AlertTriangle } from "lucide-react";
 import BudgetModal from "@/components/modals/BudgetModal";
 import type { BudgetFormData } from "@/lib/validations";
-import { budgetsAPI, categoriesAPI, transactionsAPI } from "@/lib/api";
+import { budgetsAPI, categoriesAPI } from "@/lib/api";
 import toast from "react-hot-toast";
-import type {
-  Budget,
-  Category,
-  Transaction,
-  BudgetWithSpending,
-} from "@/types";
+import type { BudgetStatus, Category } from "@/types";
 import { useCurrency } from "@/hooks/useCurrency";
 
 export default function BudgetsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [budgets, setBudgets] = useState<BudgetStatus[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const formatCurrency = useCurrency();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [budgetsData, categoriesData, transactionsData] = await Promise.all(
-        [budgetsAPI.getAll(), categoriesAPI.getAll(), transactionsAPI.getAll()],
-      );
+
+      const [budgetsData, categoriesData] = await Promise.all([
+        budgetsAPI.getStatus(),
+        categoriesAPI.getAll(),
+      ]);
+
       setBudgets(budgetsData);
       setCategories(categoriesData);
-      setTransactions(transactionsData.data);
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Không thể tải dữ liệu";
@@ -43,7 +35,11 @@ export default function BudgetsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleAddBudget = async (data: BudgetFormData) => {
     try {
@@ -65,38 +61,13 @@ export default function BudgetsPage() {
     }
   };
 
-  const calculateBudgetSpending = (budget: Budget): BudgetWithSpending => {
-    const category = categories.find((cat) => cat.id === budget.category_id);
-
-    // Calculate spending for this budget period and category
-    const spent = transactions
-      .filter((tx) => {
-        if (tx.type !== "expense" || tx.category_id !== budget.category_id) {
-          return false;
-        }
-        const txDate = new Date(tx.occurred_on);
-        const startDate = new Date(budget.start_date);
-        const endDate = new Date(budget.end_date);
-        return txDate >= startDate && txDate <= endDate;
-      })
-      .reduce((sum, tx) => sum + tx.amount, 0);
-
-    const remaining = budget.limit_amount - spent;
-    const percentage =
-      budget.limit_amount > 0
-        ? Math.min((spent / budget.limit_amount) * 100, 100)
-        : 0;
-
-    return {
+  // Map categories for display
+  const budgetsWithCategories = useMemo(() => {
+    return budgets.map((budget) => ({
       ...budget,
-      spent,
-      remaining,
-      percentage,
-      category,
-    };
-  };
-
-  const budgetsWithSpending = budgets.map(calculateBudgetSpending);
+      category: categories.find((cat) => cat.id === budget.category_id),
+    }));
+  }, [budgets, categories]);
 
   const getPeriodLabel = (period: string) => {
     switch (period) {
@@ -159,7 +130,7 @@ export default function BudgetsPage() {
                   Ngân sách của bạn
                 </h2>
                 <p className="text-muted-text mt-1">
-                  {budgetsWithSpending.length} ngân sách đang hoạt động
+                  {budgetsWithCategories.length} ngân sách đang hoạt động
                 </p>
               </div>
               <button
@@ -171,21 +142,31 @@ export default function BudgetsPage() {
               </button>
             </div>
 
-            {budgetsWithSpending.length === 0 ? (
+            {budgetsWithCategories.length === 0 ? (
               <div className="text-center py-20">
                 <Target className="w-16 h-16 text-muted-text mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-muted-text">
+                <h3 className="text-xl font-semibold text-muted-text mb-2">
                   Chưa có ngân sách nào
                 </h3>
+                <p className="text-muted-text mb-6">
+                  Tạo ngân sách để theo dõi chi tiêu theo danh mục
+                </p>
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Plus className="w-5 h-5" />
+                  Tạo ngân sách đầu tiên
+                </button>
                 <p className="text-muted-text mt-2">
                   Hãy tạo ngân sách đầu tiên để theo dõi chi tiêu của bạn!
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {budgetsWithSpending.map((budget) => (
+                {budgetsWithCategories.map((budget) => (
                   <div
-                    key={budget.id}
+                    key={budget.budget_id}
                     className="bg-card-bg rounded-xl p-6 border border-card-border hover:border-blue-500 transition-colors"
                   >
                     {/* Budget Header */}
