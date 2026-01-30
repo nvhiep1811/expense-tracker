@@ -295,36 +295,10 @@ NODE_ENV=production
 ## 📊 Performance
 
 - **Frontend:**
-  - Lighthouse Score: 90+
-  - First Contentful Paint: < 1.5s
-  - Time to Interactive: < 3s
-  - Code splitting & lazy loading
-  - Image optimization (AVIF/WebP)
 
 - **Backend:**
-  - Response time: < 100ms (avg)
-  - Database queries: < 50ms (optimized views)
-  - Caching: 5min TTL
-  - Compression: Gzip enabled
 
 - **Database:**
-  - 70% faster queries với optimized views
-  - 20 strategic indexes
-  - Connection pooling
-
-## 🤝 Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open Pull Request
-
-## 📝 License
-
-MIT License - see [LICENSE](LICENSE) for details
 
 ## 👥 Authors
 
