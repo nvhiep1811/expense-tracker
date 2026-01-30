@@ -40,7 +40,7 @@ export default function AccountModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-card-bg rounded-xl max-w-md w-full p-6 border border-card-border">
+      <div className="bg-card-bg rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 border border-card-border">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-foreground">Thêm tài khoản</h2>
           <button
