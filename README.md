@@ -16,7 +16,7 @@
 - JWT tokens với refresh mechanism
 - Row Level Security (RLS) trên database
 - Helmet security headers + CORS protection
-- Rate limiting: .. requests/60s
+- Rate limiting: 10 requests/60s
 
 ### 📊 Quản lý tài chính
 
@@ -265,8 +265,6 @@ PORT=3001
 NODE_ENV=production
 ```
 
-> 📘 Chi tiết: Xem [DEPLOYMENT_URLS.md](DEPLOYMENT_URLS.md) để hiểu rõ về URL configuration
-
 ### Database (Supabase)
 
 - Database đã hosted trên Supabase
@@ -278,7 +276,6 @@ NODE_ENV=production
 - **[Frontend README](frontend/README.md)** - Frontend architecture & setup
 - **[Backend README](backend/README.md)** - API endpoints & modules
 - **[Database README](database/README.md)** - Schema, views, indexes
-- **[OPTIMIZATIONS.md](OPTIMIZATIONS.md)** - Performance optimizations
 
 ## 🔒 Security
 
@@ -291,14 +288,6 @@ NODE_ENV=production
 - ✅ SQL injection protection via Supabase client
 - ✅ XSS protection
 - ✅ Audit logging
-
-## 📊 Performance
-
-- **Frontend:**
-
-- **Backend:**
-
-- **Database:**
 
 ## 👥 Authors
 
