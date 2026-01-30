@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Header from "@/components/layout/Header";
 import { Wallet, Plus, Loader2 } from "lucide-react";
 import AccountModal from "@/components/modals/AccountModal";
@@ -15,11 +15,7 @@ export default function AccountsPage() {
   const [loading, setLoading] = useState(true);
   const formatCurrency = useCurrency();
 
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
-
-  const fetchAccounts = async () => {
+  const fetchAccounts = useCallback(async () => {
     try {
       setLoading(true);
       const data = await accountsAPI.getAll();
@@ -33,11 +29,16 @@ export default function AccountsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const totalBalance = accounts.reduce(
-    (sum, acc) => sum + acc.current_balance,
-    0,
+  useEffect(() => {
+    fetchAccounts();
+  }, [fetchAccounts]);
+
+  // Memoize total balance calculation
+  const totalBalance = useMemo(
+    () => accounts.reduce((sum, acc) => sum + acc.current_balance, 0),
+    [accounts],
   );
 
   const getAccountTypeLabel = (type: string) => {
@@ -103,9 +104,19 @@ export default function AccountsPage() {
             {accounts.length === 0 ? (
               <div className="text-center py-12">
                 <Wallet className="w-16 h-16 mx-auto text-muted-text mb-4" />
-                <p className="text-muted-text">
-                  Chưa có tài khoản nào. Hãy thêm tài khoản đầu tiên!
+                <h3 className="text-xl font-semibold text-muted-text mb-2">
+                  Chưa có tài khoản nào
+                </h3>
+                <p className="text-muted-text mb-6">
+                  Hãy thêm tài khoản đầu tiên để bắt đầu theo dõi tài chính!
                 </p>
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Plus className="w-5 h-5" />
+                  Thêm tài khoản đầu tiên
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

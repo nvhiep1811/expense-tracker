@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Header from "@/components/layout/Header";
 import StatCard from "@/components/ui/StatCard";
-import { Wallet, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Loader2, Plus } from "lucide-react";
 import {
   PieChart,
   Pie,
@@ -19,7 +19,7 @@ import {
 } from "recharts";
 import { budgetsAPI, dashboardAPI, transactionsAPI } from "@/lib/api";
 import toast from "react-hot-toast";
-import type { Budget, BudgetWithSpending, Transaction } from "@/types";
+import type { BudgetStatus, Transaction } from "@/types";
 import type { DashboardStats } from "@/types/dashboard";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useRouter } from "next/navigation";
@@ -28,7 +28,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const formatCurrency = useCurrency();
   const [loading, setLoading] = useState(true);
-  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [budgets, setBudgets] = useState<BudgetStatus[]>([]);
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(
     null,
   );
@@ -44,13 +44,27 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       // Use optimized dashboard API with database views
-      const [budgetsData, statsData, transactionsData] = await Promise.all([
-        budgetsAPI.getAll(),
-        dashboardAPI.getStats(), // NEW: Uses database views for performance
-        transactionsAPI.getAll({ limit: 10 }), // Get recent transactions
-      ]);
+      const [budgetStatusData, statsData, transactionsData] = await Promise.all(
+        [
+          budgetsAPI.getStatus(), // ✅ Use v_budget_status view
+          dashboardAPI.getStats(), // Uses database views for performance
+          transactionsAPI.getAll({ limit: 10 }), // Get recent transactions
+        ],
+      );
 
-      setBudgets(budgetsData);
+      // Filter only active budgets for current month
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+
+      const activeBudgets = budgetStatusData.filter((budget) => {
+        const startDate = new Date(budget.start_date);
+        const endDate = new Date(budget.end_date);
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
+        return now >= startDate && now <= endDate;
+      });
+
+      setBudgets(activeBudgets);
       setDashboardStats(statsData);
       setRecentTransactions(transactionsData.data);
     } catch (error: unknown) {
@@ -97,39 +111,6 @@ export default function DashboardPage() {
     });
   }, [dashboardStats]);
 
-  // Calculate budget spending
-  const budgetsWithSpending = useMemo<BudgetWithSpending[]>(() => {
-    if (!dashboardStats?.categorySpending) return [];
-
-    return budgets.map((budget) => {
-      const categoryData = dashboardStats.categorySpending.find(
-        (c) => c.category_id === budget.category_id,
-      );
-      const spent = categoryData?.spent || 0;
-      const remaining = budget.limit_amount - spent;
-      const percentage = (spent / budget.limit_amount) * 100;
-
-      return {
-        ...budget,
-        spent,
-        remaining,
-        percentage,
-        category: categoryData
-          ? {
-              id: budget.category_id,
-              user_id: budget.user_id,
-              name: categoryData.category_name || "Unknown",
-              side: "expense" as const,
-              color: categoryData.color,
-              sort_order: 0,
-              created_at: budget.created_at,
-              updated_at: budget.updated_at,
-            }
-          : undefined,
-      };
-    });
-  }, [budgets, dashboardStats]);
-
   // Get category name from dashboard stats
   const getCategoryName = (categoryId?: string) => {
     if (!categoryId) return "Không danh mục";
@@ -173,7 +154,7 @@ export default function DashboardPage() {
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
         <div className="space-y-6">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <StatCard
               title="Tổng tài sản"
               amount={totalBalance}
@@ -208,8 +189,15 @@ export default function DashboardPage() {
                 Chi tiêu theo danh mục
               </h3>
               {categorySpending.length === 0 ? (
-                <div className="flex items-center justify-center h-72 text-muted-text">
-                  Chưa có dữ liệu chi tiêu
+                <div className="flex flex-col items-center justify-center h-72 text-muted-text">
+                  <p className="mb-4">Chưa có dữ liệu chi tiêu</p>
+                  <button
+                    onClick={() => router.push("/dashboard/transactions")}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Thêm giao dịch đầu tiên
+                  </button>
                 </div>
               ) : (
                 <>
@@ -310,8 +298,15 @@ export default function DashboardPage() {
               </div>
               <div className="space-y-3">
                 {currentMonthTransactions.length === 0 ? (
-                  <div className="text-center py-8 text-muted-text">
-                    Chưa có giao dịch nào
+                  <div className="flex flex-col items-center py-8 text-muted-text">
+                    <p className="mb-4">Chưa có giao dịch nào</p>
+                    <button
+                      onClick={() => router.push("/dashboard/transactions")}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Thêm giao dịch
+                    </button>
                   </div>
                 ) : (
                   currentMonthTransactions.slice(0, 5).map((tx) => (
@@ -374,18 +369,25 @@ export default function DashboardPage() {
                 </button>
               </div>
               <div className="space-y-4">
-                {budgetsWithSpending.length === 0 ? (
-                  <div className="text-center py-8 text-muted-text">
-                    Chưa có ngân sách nào
+                {budgets.length === 0 ? (
+                  <div className="flex flex-col items-center py-8 text-muted-text">
+                    <p className="mb-4">Chưa có ngân sách nào</p>
+                    <button
+                      onClick={() => router.push("/dashboard/budgets")}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Tạo ngân sách
+                    </button>
                   </div>
                 ) : (
-                  budgetsWithSpending.slice(0, 5).map((budget) => {
+                  budgets.slice(0, 5).map((budget) => {
                     const percentage = budget.percentage;
                     return (
-                      <div key={budget.id}>
+                      <div key={budget.budget_id}>
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium text-foreground">
-                            {budget.category?.name || "Không danh mục"}
+                            {budget.category_name || "Không danh mục"}
                           </span>
                           <span className="text-sm text-muted-text">
                             {formatCurrency(budget.spent)} /{" "}

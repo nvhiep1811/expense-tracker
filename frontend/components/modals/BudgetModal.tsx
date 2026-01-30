@@ -63,23 +63,34 @@ export default function BudgetModal({
             <label className="block text-sm font-medium text-foreground mb-2">
               Danh mục chi tiêu
             </label>
-            <select
-              {...register("category")}
-              className={`w-full px-4 py-2 border ${
-                errors.category ? "border-red-500" : "border-input-border"
-              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
-            >
-              <option value="">Chọn danh mục</option>
-              {expenseCategories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-            {errors.category && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.category.message}
-              </p>
+            {expenseCategories.length === 0 ? (
+              <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  Không có danh mục chi tiêu nào. Vui lòng tạo danh mục chi tiêu
+                  trước khi thiết lập ngân sách.
+                </p>
+              </div>
+            ) : (
+              <>
+                <select
+                  {...register("category")}
+                  className={`w-full px-4 py-2 border ${
+                    errors.category ? "border-red-500" : "border-input-border"
+                  } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
+                >
+                  <option value="">Chọn danh mục</option>
+                  {expenseCategories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.category && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.category.message}
+                  </p>
+                )}
+              </>
             )}
           </div>
 
@@ -217,7 +228,8 @@ export default function BudgetModal({
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              disabled={expenseCategories.length === 0}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Thêm
             </button>
