@@ -31,6 +31,19 @@ export class BudgetsController {
     return this.budgetsService.findAll(user.id, token);
   }
 
+  /**
+   * Get budget status with spending calculations
+   * Uses optimized v_budget_status view
+   */
+  @Get('status')
+  async getBudgetStatus(
+    @CurrentUser() user: User,
+    @Req() request: Request,
+  ): Promise<any[]> {
+    const token = extractToken(request);
+    return this.budgetsService.getBudgetStatus(user.id, token);
+  }
+
   @Get(':id')
   async findOne(
     @CurrentUser() user: User,

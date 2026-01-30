@@ -14,7 +14,9 @@ export class BudgetsService extends BaseService {
     const supabase = this.getAuthenticatedClient(accessToken);
     const { data, error } = await supabase
       .from('budgets')
-      .select('*')
+      .select(
+        'id, user_id, category_id, period, start_date, end_date, limit_amount, alert_threshold_pct, rollover, created_at, updated_at, deleted_at',
+      )
       .eq('user_id', userId)
       .is('deleted_at', null)
       .order('start_date', { ascending: false });
@@ -92,5 +94,21 @@ export class BudgetsService extends BaseService {
 
     if (error) throw error;
     return data as Budget;
+  }
+
+  /**
+   * Get budget status with spending calculations from view
+   * Uses v_budget_status view for optimized performance
+   */
+  async getBudgetStatus(userId: string, accessToken: string): Promise<any[]> {
+    const supabase = this.getAuthenticatedClient(accessToken);
+    const { data, error } = await supabase
+      .from('v_budget_status')
+      .select('*')
+      .eq('user_id', userId)
+      .order('start_date', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
   }
 }
