@@ -1,0 +1,130 @@
+# Database Scripts
+
+Folder này chứa các SQL scripts để setup database cho MoneyTrack.
+
+## 📋 Thứ tự thực thi
+
+Chạy các file theo thứ tự sau trong Supabase SQL Editor:
+
+1. **01_schema.sql** - Tables, RLS policies, functions, triggers
+2. **02_views.sql** - Optimized views
+3. **03_indexes.sql** - Performance indexes
+
+## 📝 Mô tả chi tiết
+
+### 01_schema.sql
+
+**Nội dung:**
+
+- Extensions: pgcrypto
+- Enums: account_type, tx_type, category_side, budget_period, alert_type, recurring_freq
+- Tables: profiles, accounts, categories, transactions, budgets, alerts, recurring_rules, audit_log
+- RLS Policies: Tất cả tables có RLS với policies SELECT/INSERT/UPDATE/DELETE own
+- Functions:
+  - `handle_new_user()`: Tự động tạo profile + default categories khi signup (OAuth support)
+  - `create_default_categories()`: Tạo 5 income + 10 expense categories mặc định
+  - `check_email_exists()`: Kiểm tra email tồn tại
+  - `set_updated_at()`: Auto-update updated_at timestamp
+  - `apply_tx_to_balance()`: Tính toán balance cho transactions
+  - `trg_accounts_init_balance()`: Set current_balance = opening_balance
+  - `audit_row_change()`: Ghi audit log
+- Triggers:
+  - `on_auth_user_created`: Tạo profile + categories khi user signup
+  - `trg_*_updated_at`: Auto-update updated_at (6 tables)
+  - `trg_transactions_balance`: Maintain account balance khi CRUD transactions
+  - `trg_audit_*`: Ghi audit log (5 tables)
+- Basic Indexes: 9 indexes cơ bản (user_id, date, etc.)
+
+**⚠️ Quan trọng:**
+
+- Function `handle_new_user()` đã tích hợp tạo categories
+- Balance được maintain tự động qua trigger
+- Audit log tự động cho mọi thao tác INSERT/UPDATE/DELETE
+
+### 02_views.sql
+
+**4 Views:**
+
+1. `v_monthly_cashflow`: Thu chi theo tháng (income, expense, net)
+2. `v_category_spend_monthly`: Chi tiêu theo category + tháng (kèm name, color)
+3. `v_net_worth`: Tổng tài sản (sum current_balance)
+4. `v_budget_status`: Trạng thái ngân sách (spent, remaining, percentage)
+
+### 03_indexes.sql
+
+**11 Performance Indexes:**
+
+1. `tx_user_date_type_idx`: Support views (DATE_TRUNC queries)
+2. `tx_user_type_date_idx`: Filter income/expense by date
+3. `budgets_user_category_date_idx`: Budget calculations
+4. `recurring_active_next_idx`: Active recurring rules
+5. `tx_tags_idx`: GIN index cho tag search
+6. `accounts_user_balance_idx`: Sort accounts by balance
+7. `alerts_user_unread_idx`: Partial index cho unread alerts
+8. `profiles_timezone_idx`: Timezone queries
+9. `tx_user_date_covering_idx`: Covering index (no table lookup)
+10. `categories_user_side_idx`: Filter income/expense categories
+11. `audit_occurred_at_idx`: Audit reports
+
+## 🚀 Hướng dẫn setup
+
+```sql
+-- 1. Mở Supabase Dashboard → SQL Editor
+-- 2. Tạo New Query và paste nội dung 01_schema.sql
+-- 3. Run query
+-- 4. Tạo New Query và paste nội dung 02_views.sql
+-- 5. Run query
+-- 6. Tạo New Query và paste nội dung 03_indexes.sql
+-- 7. Run query
+```
+
+## ✅ Verify
+
+Sau khi chạy xong, verify bằng cách:
+
+```sql
+-- Kiểm tra tables (nên có 8 tables)
+SELECT table_name FROM information_schema.tables
+WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+ORDER BY table_name;
+
+-- Kiểm tra views (nên có 4 views)
+SELECT table_name FROM information_schema.views
+WHERE table_schema = 'public'
+ORDER BY table_name;
+
+-- Kiểm tra indexes
+SELECT indexname FROM pg_indexes
+WHERE schemaname = 'public'
+ORDER BY indexname;
+
+-- Kiểm tra triggers
+SELECT trigger_name, event_object_table
+FROM information_schema.triggers
+WHERE trigger_schema = 'public'
+ORDER BY event_object_table, trigger_name;
+
+-- Test functions
+SELECT routine_name FROM information_schema.routines
+WHERE routine_schema = 'public' AND routine_type = 'FUNCTION'
+ORDER BY routine_name;
+```
+
+## 📊 Thống kê
+
+- **Tables**: 8
+- **Views**: 4
+- **Functions**: 8
+- **Triggers**: 13
+- **Indexes**: 20 (9 basic + 11 performance)
+- **RLS Policies**: 30+
+- **Constraints**: CHECK, UNIQUE, Foreign Keys
+
+## ✨ Features
+
+- ✅ Row Level Security (RLS) đầy đủ
+- ✅ Auto profile creation với OAuth support
+- ✅ Auto balance maintenance qua triggers
+- ✅ Audit logging cho compliance
+- ✅ Soft delete pattern
+- ✅ Optimized views và indexes
