@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+
+# Public pages
+Allow: /login
+Allow: /register
+Allow: /forgot-password
+Allow: /reset-password
+
+# Block authenticated pages from crawlers
+Disallow: /dashboard
+Disallow: /dashboard/*
+Disallow: /api/*
+Disallow: /auth/*
+
+# Block auth callbacks
+Disallow: /auth/callback
+
+# Sitemap
+Sitemap: https://expense-tracker-nvh.vercel.app/sitemap.xml
