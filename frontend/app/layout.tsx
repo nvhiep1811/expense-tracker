@@ -16,8 +16,66 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MoneyTrack - Quản lý chi tiêu thông minh",
-  description: "Ứng dụng quản lý tài chính cá nhân hiệu quả",
+  title: {
+    default: "MoneyTrack - Quản lý chi tiêu thông minh",
+    template: "%s | MoneyTrack",
+  },
+  description:
+    "Ứng dụng quản lý tài chính cá nhân thông minh. Theo dõi thu chi, ngân sách, báo cáo chi tiết. Miễn phí, an toàn, dễ sử dụng.",
+  keywords: [
+    "quản lý chi tiêu",
+    "quản lý tài chính",
+    "sổ thu chi",
+    "ngân sách",
+    "expense tracker",
+    "budget",
+    "personal finance",
+  ],
+  authors: [{ name: "MoneyTrack Team" }],
+  creator: "MoneyTrack",
+  publisher: "MoneyTrack",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+  ),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "MoneyTrack - Quản lý chi tiêu thông minh",
+    description:
+      "Ứng dụng quản lý tài chính cá nhân thông minh. Theo dõi thu chi, ngân sách, báo cáo chi tiết.",
+    url: "/",
+    siteName: "MoneyTrack",
+    locale: "vi_VN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MoneyTrack - Quản lý chi tiêu thông minh",
+    description:
+      "Ứng dụng quản lý tài chính cá nhân thông minh. Miễn phí, an toàn, dễ sử dụng.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  verification: {
+    // Add your verification tokens here when ready
+    // google: "your-google-verification-token",
+    // yandex: "your-yandex-verification-token",
+  },
 };
 
 export default function RootLayout({
