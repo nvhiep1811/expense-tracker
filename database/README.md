@@ -6,7 +6,7 @@ Folder này chứa các SQL scripts để setup database cho MoneyTrack.
 
 Chạy các file theo thứ tự sau trong Supabase SQL Editor:
 
-1. **01_schema.sql** - Tables, RLS policies, functions, triggers
+1. **01_schema.sql** - Tables, RLS policies, functions, triggers, system categories
 2. **02_views.sql** - Optimized views
 3. **03_indexes.sql** - Performance indexes
 4. **04_budget_alerts.sql** - Budget alert triggers (tự động tạo alerts khi chi tiêu vượt ngưỡng)
@@ -22,15 +22,15 @@ Chạy các file theo thứ tự sau trong Supabase SQL Editor:
 - Tables: profiles, accounts, categories, transactions, budgets, alerts, recurring_rules, audit_log
 - RLS Policies: Tất cả tables có RLS với policies SELECT/INSERT/UPDATE/DELETE own
 - Functions:
-  - `handle_new_user()`: Tự động tạo profile + default categories khi signup (OAuth support)
-  - `create_default_categories()`: Tạo 5 income + 10 expense categories mặc định
+  - `handle_new_user()`: Tự động tạo profile khi signup (OAuth support)
+  - `create_default_categories()`: [DEPRECATED] Không còn sử dụng - system categories được dùng thay thế
   - `check_email_exists()`: Kiểm tra email tồn tại
   - `set_updated_at()`: Auto-update updated_at timestamp
   - `apply_tx_to_balance()`: Tính toán balance cho transactions
   - `trg_accounts_init_balance()`: Set current_balance = opening_balance
   - `audit_row_change()`: Ghi audit log
 - Triggers:
-  - `on_auth_user_created`: Tạo profile + categories khi user signup
+  - `on_auth_user_created`: Tạo profile khi user signup
   - `trg_*_updated_at`: Auto-update updated_at (6 tables)
   - `trg_transactions_balance`: Maintain account balance khi CRUD transactions
   - `trg_audit_*`: Ghi audit log (5 tables)
@@ -38,7 +38,9 @@ Chạy các file theo thứ tự sau trong Supabase SQL Editor:
 
 **⚠️ Quan trọng:**
 
-- Function `handle_new_user()` đã tích hợp tạo categories
+- Categories table hỗ trợ system categories (user_id = NULL, is_system = true)
+- 15 system categories mặc định (5 income + 10 expense) được tạo tự động
+- User có thể tạo custom categories riêng (user_id = UUID)
 - Balance được maintain tự động qua trigger
 - Audit log tự động cho mọi thao tác INSERT/UPDATE/DELETE
 
@@ -82,15 +84,13 @@ Chạy các file theo thứ tự sau trong Supabase SQL Editor:
 
 ```sql
 -- 1. Mở Supabase Dashboard → SQL Editor
--- 2. Tạo New Query và paste nội dung 01_schema.sql
--- 3. Run query
--- 4. Tạo New Query và paste nội dung 02_views.sql
--- 5. Run query
--- 6. Tạo New Query và paste nội dung 03_indexes.sql
--- 7. Run query
--- 8. Tạo New Query và paste nội dung 04_budget_alerts.sql
--- 9. Run query
+-- 2. Tạo New Query và paste nội dung 01_schema.sql → Run
+-- 3. Tạo New Query và paste nội dung 02_views.sql → Run
+-- 4. Tạo New Query và paste nội dung 03_indexes.sql → Run
+-- 5. Tạo New Query và paste nội dung 04_budget_alerts.sql → Run
 ```
+
+**Lưu ý:** 01_schema.sql đã bao gồm 15 system categories mặc định (INSERT với ON CONFLICT DO NOTHING).
 
 ## ✅ Verify
 
@@ -132,11 +132,14 @@ ORDER BY routine_name;
 - **Triggers**: 14 (13 core + trg_check_budget_after_tx)
 - **Indexes**: 22 (9 basic + 12 performance + 1 budget alerts)
 - **RLS Policies**: 30+
+- **System Categories**: 15 (5 income + 10 expense)
 - **Constraints**: CHECK, UNIQUE, Foreign Keys
 
 ## ✨ Features
 
 - ✅ Row Level Security (RLS) đầy đủ
+- ✅ System categories dùng chung cho tất cả users (giảm overhead DB)
+- ✅ User có thể tạo custom categories riêng
 - ✅ Auto profile creation với OAuth support
 - ✅ Auto balance maintenance qua triggers
 - ✅ Auto budget alerts khi vượt ngưỡng chi tiêu
