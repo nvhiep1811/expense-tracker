@@ -53,7 +53,9 @@ export class BudgetsService extends BaseService {
     const supabase = this.getAuthenticatedClient(accessToken);
     const { data, error } = await supabase
       .from('budgets')
-      .select('*')
+      .select(
+        'id, user_id, category_id, period, start_date, end_date, limit_amount, alert_threshold_pct, rollover, created_at, updated_at, deleted_at',
+      )
       .eq('id', budgetId)
       .eq('user_id', userId)
       .is('deleted_at', null)
@@ -127,7 +129,9 @@ export class BudgetsService extends BaseService {
     const supabase = this.getAuthenticatedClient(accessToken);
     const { data, error } = await supabase
       .from('v_budget_status')
-      .select('*')
+      .select(
+        'budget_id, user_id, category_id, period, start_date, end_date, limit_amount, alert_threshold_pct, rollover, category_name, category_color, spent, remaining, percentage',
+      )
       .eq('user_id', userId)
       .order('start_date', { ascending: false });
 
@@ -146,10 +150,12 @@ export class BudgetsService extends BaseService {
   ): Promise<Budget> {
     const supabase = this.getAuthenticatedClient(accessToken);
 
-    // Get the original budget
+    // Get the original budget - only need fields for renewal
     const { data: originalBudget, error: fetchError } = await supabase
       .from('budgets')
-      .select('*')
+      .select(
+        'category_id, period, end_date, limit_amount, alert_threshold_pct, rollover',
+      )
       .eq('id', budgetId)
       .eq('user_id', userId)
       .is('deleted_at', null)

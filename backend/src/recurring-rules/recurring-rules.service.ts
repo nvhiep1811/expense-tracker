@@ -17,7 +17,9 @@ export class RecurringRulesService extends BaseService {
     const supabase = this.getAuthenticatedClient(accessToken);
     const { data, error } = await supabase
       .from('recurring_rules')
-      .select('*')
+      .select(
+        'id, user_id, type, amount, account_id, category_id, description, freq, interval, byweekday, bymonthday, start_on, end_on, last_generated_on, is_active, created_at, updated_at, deleted_at',
+      )
       .eq('user_id', userId)
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
@@ -34,7 +36,9 @@ export class RecurringRulesService extends BaseService {
     const supabase = this.getAuthenticatedClient(accessToken);
     const { data, error } = await supabase
       .from('recurring_rules')
-      .select('*')
+      .select(
+        'id, user_id, type, amount, account_id, category_id, description, freq, interval, byweekday, bymonthday, start_on, end_on, last_generated_on, is_active, created_at, updated_at, deleted_at',
+      )
       .eq('id', ruleId)
       .eq('user_id', userId)
       .is('deleted_at', null)

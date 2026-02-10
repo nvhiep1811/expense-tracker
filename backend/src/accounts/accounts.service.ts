@@ -33,7 +33,9 @@ export class AccountsService extends BaseService {
     const supabase = this.getAuthenticatedClient(accessToken);
     const { data, error } = await supabase
       .from('accounts')
-      .select('*')
+      .select(
+        'id, user_id, name, type, color, currency, opening_balance, current_balance, is_archived, created_at, updated_at, deleted_at',
+      )
       .eq('id', accountId)
       .eq('user_id', userId)
       .is('deleted_at', null)

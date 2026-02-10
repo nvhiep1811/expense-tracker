@@ -67,19 +67,24 @@ export class DashboardService extends BaseService {
           .gte('month', currentMonthStart.toISOString().split('T')[0])
           .lt('month', nextMonthStart.toISOString().split('T')[0]),
 
-        // Net worth from view
-        supabase.from('v_net_worth').select('*').eq('user_id', userId).single(),
+        // Net worth from view - use maybeSingle() to handle case when no data exists
+        supabase
+          .from('v_net_worth')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle(),
 
-        // Categories for enrichment
+        // Categories for enrichment (including system categories)
         supabase
           .from('categories')
           .select('id, name, color')
-          .eq('user_id', userId)
+          .or(`user_id.is.null,user_id.eq.${userId}`)
           .is('deleted_at', null),
       ]);
 
     if (cashflowResult.error) throw new Error(cashflowResult.error.message);
     if (categoryResult.error) throw new Error(categoryResult.error.message);
+    // netWorthResult with maybeSingle() won't error on empty result
     if (netWorthResult.error) throw new Error(netWorthResult.error.message);
     if (categoriesResult.error) throw new Error(categoriesResult.error.message);
 
