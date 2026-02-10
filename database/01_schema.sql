@@ -33,7 +33,26 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create type public.alert_type as enum ('budget_near_limit','budget_over_limit');
+  create type public.alert_type as enum (
+    'budget_near_limit',
+    'budget_over_limit',
+    'recurring_reminder',
+    'account_low_balance',
+    'goal_achieved'
+  );
+exception when duplicate_object then null; end $$;
+
+-- Add new alert types if enum already exists
+do $$ begin
+  ALTER TYPE public.alert_type ADD VALUE IF NOT EXISTS 'recurring_reminder';
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  ALTER TYPE public.alert_type ADD VALUE IF NOT EXISTS 'account_low_balance';
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  ALTER TYPE public.alert_type ADD VALUE IF NOT EXISTS 'goal_achieved';
 exception when duplicate_object then null; end $$;
 
 do $$ begin
@@ -480,13 +499,17 @@ create table if not exists public.alerts (
   user_id uuid not null references auth.users(id) on delete cascade,
 
   type public.alert_type not null,
-  budget_id uuid references public.budgets(id),
-  category_id uuid references public.categories(id),
+  budget_id uuid references public.budgets(id) on delete set null,
+  category_id uuid references public.categories(id) on delete set null,
 
   payload jsonb not null default '{}'::jsonb,
   is_read boolean not null default false,
+  dismissed_at timestamptz,
   occurred_at timestamptz not null default now()
 );
+
+-- Add dismissed_at column if table already exists
+ALTER TABLE public.alerts ADD COLUMN IF NOT EXISTS dismissed_at timestamptz;
 
 create index if not exists alerts_user_time_idx
   on public.alerts(user_id, occurred_at desc);

@@ -9,6 +9,7 @@ Chạy các file theo thứ tự sau trong Supabase SQL Editor:
 1. **01_schema.sql** - Tables, RLS policies, functions, triggers
 2. **02_views.sql** - Optimized views
 3. **03_indexes.sql** - Performance indexes
+4. **04_budget_alerts.sql** - Budget alert triggers (tự động tạo alerts khi chi tiêu vượt ngưỡng)
 
 ## 📝 Mô tả chi tiết
 
@@ -17,7 +18,7 @@ Chạy các file theo thứ tự sau trong Supabase SQL Editor:
 **Nội dung:**
 
 - Extensions: pgcrypto
-- Enums: account_type, tx_type, category_side, budget_period, alert_type, recurring_freq
+- Enums: account_type, tx_type, category_side, budget_period, alert_type (5 types), recurring_freq
 - Tables: profiles, accounts, categories, transactions, budgets, alerts, recurring_rules, audit_log
 - RLS Policies: Tất cả tables có RLS với policies SELECT/INSERT/UPDATE/DELETE own
 - Functions:
@@ -48,11 +49,11 @@ Chạy các file theo thứ tự sau trong Supabase SQL Editor:
 1. `v_monthly_cashflow`: Thu chi theo tháng (income, expense, net)
 2. `v_category_spend_monthly`: Chi tiêu theo category + tháng (kèm name, color)
 3. `v_net_worth`: Tổng tài sản (sum current_balance)
-4. `v_budget_status`: Trạng thái ngân sách (spent, remaining, percentage)
+4. `v_budget_status`: Trạng thái ngân sách (spent, remaining, percentage, rollover)
 
 ### 03_indexes.sql
 
-**11 Performance Indexes:**
+**12 Performance Indexes:**
 
 1. `tx_user_date_type_idx`: Support views (DATE_TRUNC queries)
 2. `tx_user_type_date_idx`: Filter income/expense by date
@@ -61,10 +62,21 @@ Chạy các file theo thứ tự sau trong Supabase SQL Editor:
 5. `tx_tags_idx`: GIN index cho tag search
 6. `accounts_user_balance_idx`: Sort accounts by balance
 7. `alerts_user_unread_idx`: Partial index cho unread alerts
-8. `profiles_timezone_idx`: Timezone queries
-9. `tx_user_date_covering_idx`: Covering index (no table lookup)
-10. `categories_user_side_idx`: Filter income/expense categories
-11. `audit_occurred_at_idx`: Audit reports
+8. `alerts_user_active_idx`: Partial index cho active (non-dismissed) alerts
+9. `profiles_timezone_idx`: Timezone queries
+10. `tx_user_date_covering_idx`: Covering index (no table lookup)
+11. `categories_user_side_idx`: Filter income/expense categories
+12. `audit_occurred_at_idx`: Audit reports
+
+### 04_budget_alerts.sql
+
+**Budget Alert Automation:**
+
+- Function `check_budget_alerts()`: Kiểm tra và tạo alerts khi chi tiêu vượt ngưỡng
+- Trigger `trg_check_budget_after_tx`: Gọi function sau mỗi INSERT/UPDATE/DELETE trên transactions
+- Alert Types:
+  - `budget_near_limit`: Khi chi tiêu đạt % alert_threshold_pct
+  - `budget_over_limit`: Khi chi tiêu vượt 100% ngân sách
 
 ## 🚀 Hướng dẫn setup
 
@@ -76,6 +88,8 @@ Chạy các file theo thứ tự sau trong Supabase SQL Editor:
 -- 5. Run query
 -- 6. Tạo New Query và paste nội dung 03_indexes.sql
 -- 7. Run query
+-- 8. Tạo New Query và paste nội dung 04_budget_alerts.sql
+-- 9. Run query
 ```
 
 ## ✅ Verify
@@ -114,9 +128,9 @@ ORDER BY routine_name;
 
 - **Tables**: 8
 - **Views**: 4
-- **Functions**: 8
-- **Triggers**: 13
-- **Indexes**: 20 (9 basic + 11 performance)
+- **Functions**: 9 (8 core + check_budget_alerts)
+- **Triggers**: 14 (13 core + trg_check_budget_after_tx)
+- **Indexes**: 22 (9 basic + 12 performance + 1 budget alerts)
 - **RLS Policies**: 30+
 - **Constraints**: CHECK, UNIQUE, Foreign Keys
 
@@ -125,6 +139,7 @@ ORDER BY routine_name;
 - ✅ Row Level Security (RLS) đầy đủ
 - ✅ Auto profile creation với OAuth support
 - ✅ Auto balance maintenance qua triggers
+- ✅ Auto budget alerts khi vượt ngưỡng chi tiêu
 - ✅ Audit logging cho compliance
 - ✅ Soft delete pattern
 - ✅ Optimized views và indexes
