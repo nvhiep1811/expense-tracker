@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bell, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
+import AlertsDropdown from "./AlertsDropdown";
 
 export default function Header({
   title,
@@ -33,10 +34,7 @@ export default function Header({
           )}
         </div>
         <div className="flex items-center space-x-2 sm:space-x-4">
-          <button className="relative p-2 text-muted-text hover:text-foreground">
-            <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
+          <AlertsDropdown />
           <div className="flex items-center space-x-2 sm:space-x-3 pl-2 sm:pl-4 border-l border-header-border">
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
               {mounted && user?.avatarUrl ? (

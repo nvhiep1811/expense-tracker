@@ -17,7 +17,12 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { budgetsAPI, dashboardAPI, transactionsAPI } from "@/lib/api";
+import {
+  budgetsAPI,
+  dashboardAPI,
+  transactionsAPI,
+  alertsAPI,
+} from "@/lib/api";
 import toast from "react-hot-toast";
 import type { BudgetStatus, Transaction } from "@/types";
 import type { DashboardStats } from "@/types/dashboard";
@@ -38,7 +43,43 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchDashboardData();
+    checkUnreadAlerts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Check for unread alerts and show notification on login
+  const checkUnreadAlerts = async () => {
+    try {
+      const count = await alertsAPI.getUnreadCount();
+      if (count > 0) {
+        // Use unique ID to prevent duplicate toasts
+        toast.dismiss("unread-alerts");
+        toast(
+          (t) => (
+            <div className="flex items-center gap-3">
+              <span>
+                Bạn có <strong>{count}</strong> thông báo chưa đọc
+              </span>
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                className="text-blue-600 hover:text-blue-800 font-medium"
+              >
+                Xem
+              </button>
+            </div>
+          ),
+          {
+            id: "unread-alerts",
+            icon: "🔔",
+            duration: 5000,
+            position: "top-right",
+          },
+        );
+      }
+    } catch {
+      // Silently fail - not critical
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
