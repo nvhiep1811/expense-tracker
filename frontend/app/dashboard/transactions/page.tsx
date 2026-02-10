@@ -5,7 +5,8 @@ import Header from "@/components/layout/Header";
 import { Search, Plus, Loader2 } from "lucide-react";
 import TransactionModal from "@/components/modals/TransactionModal";
 import Pagination from "@/components/ui/Pagination";
-import type { TransactionFormData } from "@/lib/validations";
+import type { TransactionFormData, AccountFormData } from "@/lib/validations";
+import type { CategoryFormData } from "@/components/modals/CategoryModal";
 import { transactionsAPI, accountsAPI, categoriesAPI } from "@/lib/api";
 import toast from "react-hot-toast";
 import type { Transaction, Account, Category, PaginationMeta } from "@/types";
@@ -121,6 +122,42 @@ export default function TransactionsPage() {
     }
   };
 
+  const handleCategoryCreated = async (data: CategoryFormData) => {
+    try {
+      await categoriesAPI.create({
+        name: data.name,
+        side: data.side,
+        icon: data.icon,
+        color: data.color,
+      });
+      await fetchCategories(); // Reload categories to include the new one
+      toast.success("Tạo danh mục thành công!");
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error ? error.message : "Không thể tạo danh mục",
+      );
+      throw error; // Re-throw to keep modal open
+    }
+  };
+
+  const handleAccountCreated = async (data: AccountFormData) => {
+    try {
+      await accountsAPI.create({
+        name: data.name,
+        type: data.type,
+        opening_balance: data.balance,
+        color: data.color,
+      });
+      await fetchAccounts(); // Reload accounts to include the new one
+      toast.success("Tạo tài khoản thành công!");
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error ? error.message : "Không thể tạo tài khoản",
+      );
+      throw error; // Re-throw to keep modal open
+    }
+  };
+
   const filteredTransactions = useMemo(() => {
     return transactions.filter((tx) => {
       const matchesSearch =
@@ -176,7 +213,7 @@ export default function TransactionsPage() {
                 </select>
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center space-x-2"
+                  className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center space-x-2 cursor-pointer"
                 >
                   <Plus className="w-5 h-5" />
                   <span>Thêm giao dịch</span>
@@ -319,7 +356,8 @@ export default function TransactionsPage() {
           onSubmit={handleAddTransaction}
           accounts={accounts}
           categories={categories}
-          onAccountCreated={fetchAccounts}
+          onAccountCreated={handleAccountCreated}
+          onCategoryCreated={handleCategoryCreated}
         />
       </main>
     </>

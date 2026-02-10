@@ -37,13 +37,14 @@ export interface Transaction {
 // Category types
 export interface Category {
   id: string;
-  user_id: string;
+  user_id: string | null; // NULL for system categories
   name: string;
   side: "income" | "expense";
   icon?: string;
   color?: string;
   parent_id?: string;
   sort_order: number;
+  is_system?: boolean; // true for shared system categories
   created_at: string;
   updated_at: string;
   deleted_at?: string;

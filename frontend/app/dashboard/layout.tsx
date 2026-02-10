@@ -31,6 +31,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         {/* Mobile menu button */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
+          aria-label={sidebarOpen ? "Đóng menu" : "Mở menu"}
+          aria-expanded={sidebarOpen}
           className="lg:hidden fixed bottom-6 right-6 z-30 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-primary-hover transition"
         >
           {sidebarOpen ? (

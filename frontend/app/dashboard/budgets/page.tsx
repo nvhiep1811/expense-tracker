@@ -18,6 +18,7 @@ import {
 import BudgetModal from "@/components/modals/BudgetModal";
 import ConfirmModal from "@/components/modals/ConfirmModal";
 import type { BudgetFormData } from "@/lib/validations";
+import type { CategoryFormData } from "@/components/modals/CategoryModal";
 import { budgetsAPI, categoriesAPI } from "@/lib/api";
 import toast from "react-hot-toast";
 import type { BudgetStatus, Category } from "@/types";
@@ -107,6 +108,24 @@ export default function BudgetsPage() {
       const errorMessage =
         error instanceof Error ? error.message : "Không thể xóa ngân sách";
       toast.error(errorMessage);
+    }
+  };
+
+  const handleCategoryCreated = async (data: CategoryFormData) => {
+    try {
+      await categoriesAPI.create({
+        name: data.name,
+        side: data.side,
+        icon: data.icon,
+        color: data.color,
+      });
+      await fetchData(); // Reload categories
+      toast.success("Tạo danh mục thành công!");
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error ? error.message : "Không thể tạo danh mục",
+      );
+      throw error; // Re-throw to keep modal open
     }
   };
 
@@ -264,7 +283,7 @@ export default function BudgetsPage() {
               </div>
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 cursor-pointer"
               >
                 <Plus className="w-5 h-5" />
                 <span>Thêm ngân sách</span>
@@ -282,7 +301,7 @@ export default function BudgetsPage() {
                 </p>
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
                 >
                   <Plus className="w-5 h-5" />
                   Tạo ngân sách đầu tiên
@@ -391,7 +410,7 @@ export default function BudgetsPage() {
                           <div className="flex gap-2 pt-4 mt-4 border-t border-card-border">
                             <button
                               onClick={() => handleEditBudget(budget)}
-                              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors cursor-pointer"
                             >
                               <Pencil className="w-4 h-4" />
                               Sửa
@@ -405,7 +424,7 @@ export default function BudgetsPage() {
                                     budget.category?.name || "Danh mục",
                                 })
                               }
-                              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-4 h-4" />
                               Xóa
@@ -426,7 +445,7 @@ export default function BudgetsPage() {
                     </p>
                     <button
                       onClick={() => setIsModalOpen(true)}
-                      className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
                       Tạo ngân sách mới
@@ -439,7 +458,7 @@ export default function BudgetsPage() {
                   <div className="space-y-4">
                     <button
                       onClick={() => setShowExpired(!showExpired)}
-                      className="flex items-center gap-2 text-lg font-semibold text-muted-text hover:text-foreground transition-colors"
+                      className="flex items-center gap-2 text-lg font-semibold text-muted-text hover:text-foreground transition-colors cursor-pointer"
                     >
                       <History className="w-5 h-5" />
                       Đã hết hạn ({expiredBudgets.length})
@@ -603,7 +622,7 @@ export default function BudgetsPage() {
                                   onClick={() =>
                                     handleRenewBudget(budget.budget_id)
                                   }
-                                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors cursor-pointer"
                                 >
                                   <RefreshCw className="w-4 h-4" />
                                   Gia hạn
@@ -617,7 +636,7 @@ export default function BudgetsPage() {
                                         budget.category?.name || "Danh mục",
                                     })
                                   }
-                                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                   Xóa
@@ -650,6 +669,7 @@ export default function BudgetsPage() {
           onSubmit={handleSubmitBudget}
           categories={categories}
           editingBudget={editingBudget}
+          onCategoryCreated={handleCategoryCreated}
         />
 
         {/* Delete Confirm Modal */}

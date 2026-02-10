@@ -137,7 +137,7 @@ export default function ForgotPasswordPage() {
               </p>
               <button
                 onClick={handleResend}
-                className="text-blue-600 dark:text-blue-400 hover:underline font-medium text-sm"
+                className="text-blue-600 dark:text-blue-400 hover:underline font-medium text-sm cursor-pointer"
               >
                 Gửi lại
               </button>

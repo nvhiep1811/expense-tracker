@@ -50,7 +50,7 @@ export default function Error({
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
             onClick={reset}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium cursor-pointer"
           >
             <RefreshCw className="w-5 h-5" />
             Thử lại
@@ -73,7 +73,7 @@ export default function Error({
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm">
             <button
               onClick={() => window.location.reload()}
-              className="text-blue-600 dark:text-blue-500 hover:underline"
+              className="text-blue-600 dark:text-blue-500 hover:underline cursor-pointer"
             >
               Tải lại trang
             </button>
@@ -82,7 +82,7 @@ export default function Error({
                 localStorage.clear();
                 window.location.href = "/login";
               }}
-              className="text-blue-600 dark:text-blue-500 hover:underline"
+              className="text-blue-600 dark:text-blue-500 hover:underline cursor-pointer"
             >
               Xóa cache và đăng nhập lại
             </button>
