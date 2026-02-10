@@ -254,7 +254,7 @@ export default function SettingsPage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                    className={`flex items-center gap-2 px-6 py-4 font-medium whitespace-nowrap transition-colors border-b-2 ${
+                    className={`flex items-center gap-2 px-6 py-4 font-medium whitespace-nowrap transition-colors border-b-2 cursor-pointer ${
                       isActive
                         ? "border-blue-600 text-blue-600"
                         : "border-transparent text-muted-text hover:text-foreground"
@@ -522,7 +522,7 @@ export default function SettingsPage() {
                               <button
                                 key={option.value}
                                 onClick={() => setTheme(option.value as Theme)}
-                                className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                                className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all cursor-pointer ${
                                   isSelected
                                     ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20"
                                     : "border-card-border bg-background hover:border-blue-300"

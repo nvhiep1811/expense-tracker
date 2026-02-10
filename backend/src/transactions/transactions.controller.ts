@@ -48,6 +48,8 @@ export class TransactionsController {
     return this.transactionsService.findOne(user.id, id, token);
   }
 
+  // Budget alerts are automatically created by database trigger
+  // See: database/04_budget_alerts.sql - trg_check_budget_alerts_on_tx
   @Post()
   async create(
     @CurrentUser() user: User,

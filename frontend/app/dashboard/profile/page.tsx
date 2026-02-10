@@ -190,20 +190,20 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6 pb-12">
+    <div className="max-w-5xl mx-auto p-4 sm:p-6 pb-12">
       {/* Header with Avatar */}
-      <div className="bg-linear-to-r from-blue-600 to-purple-600 rounded-2xl shadow-xl p-8 mb-8 text-white">
-        <div className="flex items-center space-x-6">
+      <div className="bg-linear-to-r from-blue-600 to-purple-600 rounded-2xl shadow-xl p-4 sm:p-8 mb-6 sm:mb-8 text-white">
+        <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:space-x-6">
           <div className="relative group">
             {avatarPreview ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={avatarPreview}
                 alt="Avatar"
-                className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-lg"
+                className="w-20 h-20 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-white shadow-lg"
               />
             ) : (
-              <div className="w-28 h-28 rounded-full bg-white/20 border-4 border-white shadow-lg flex items-center justify-center text-4xl font-bold">
+              <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-white/20 border-4 border-white shadow-lg flex items-center justify-center text-2xl sm:text-4xl font-bold">
                 {user?.name?.[0]?.toUpperCase() ||
                   user?.email?.[0]?.toUpperCase() ||
                   "?"}
@@ -212,12 +212,12 @@ export default function ProfilePage() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={updating}
-              className="absolute bottom-0 right-0 p-2 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg disabled:bg-gray-400 transition-colors"
+              className="absolute bottom-0 right-0 p-1.5 sm:p-2 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg disabled:bg-gray-400 transition-colors cursor-pointer disabled:cursor-not-allowed"
             >
               {updating ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
               ) : (
-                <Camera className="w-5 h-5" />
+                <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
               )}
             </button>
             <input
@@ -228,15 +228,17 @@ export default function ProfilePage() {
               className="hidden"
             />
           </div>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold mb-2">
+          <div className="flex-1 text-center sm:text-left">
+            <h1 className="text-xl sm:text-3xl font-bold mb-1 sm:mb-2">
               {profile?.full_name || "Người dùng"}
             </h1>
-            <p className="text-white/80 flex items-center gap-2">
+            <p className="text-white/80 flex items-center justify-center sm:justify-start gap-2 text-sm sm:text-base">
               <Mail className="w-4 h-4" />
-              {profile?.email || user?.email || "Chưa có email"}
+              <span className="truncate max-w-50 sm:max-w-none">
+                {profile?.email || user?.email || "Chưa có email"}
+              </span>
             </p>
-            <p className="text-white/60 text-sm mt-2">
+            <p className="text-white/60 text-xs sm:text-sm mt-1 sm:mt-2">
               Quản lý thông tin cá nhân và bảo mật tài khoản của bạn
             </p>
           </div>

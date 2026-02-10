@@ -7,12 +7,13 @@ import type {
 
 export const accountsAPI = {
   getAll: async (): Promise<Account[]> => {
-    const response = await api.get("/accounts");
+    // Add timestamp to bypass browser cache
+    const response = await api.get(`/accounts?_t=${Date.now()}`);
     return response.data;
   },
 
   getOne: async (id: string): Promise<Account> => {
-    const response = await api.get(`/accounts/${id}`);
+    const response = await api.get(`/accounts/${id}?_t=${Date.now()}`);
     return response.data;
   },
 

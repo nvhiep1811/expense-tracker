@@ -4,8 +4,9 @@ import { X, Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { transactionSchema, type TransactionFormData } from "@/lib/validations";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import AccountModal from "./AccountModal";
+import CategoryModal, { type CategoryFormData } from "./CategoryModal";
 import type { AccountFormData } from "@/lib/validations";
 
 interface Account {
@@ -18,6 +19,8 @@ interface Category {
   id: string;
   name: string;
   side: "income" | "expense";
+  is_system?: boolean;
+  icon?: string;
 }
 
 interface TransactionModalProps {
@@ -26,7 +29,8 @@ interface TransactionModalProps {
   onSubmit: (data: TransactionFormData) => void;
   accounts: Account[];
   categories: Category[];
-  onAccountCreated?: () => void; // Callback to refresh accounts
+  onAccountCreated?: (data: AccountFormData) => Promise<void>;
+  onCategoryCreated?: (data: CategoryFormData) => Promise<void>;
 }
 
 export default function TransactionModal({
@@ -36,8 +40,10 @@ export default function TransactionModal({
   accounts,
   categories,
   onAccountCreated,
+  onCategoryCreated,
 }: TransactionModalProps) {
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
   const {
     register,
@@ -55,9 +61,14 @@ export default function TransactionModal({
 
   const transactionType = watch("type");
 
+  // Filter and group categories by type
   const filteredCategories = categories.filter(
     (cat) => cat.side === transactionType,
   );
+
+  // Separate system and custom categories
+  const systemCategories = filteredCategories.filter((cat) => cat.is_system);
+  const customCategories = filteredCategories.filter((cat) => !cat.is_system);
 
   const onSubmit = (data: TransactionFormData) => {
     handleFormSubmit(data);
@@ -65,24 +76,56 @@ export default function TransactionModal({
     onClose();
   };
 
-  const handleAccountCreated = (data: AccountFormData) => {
-    setIsAccountModalOpen(false);
-    onAccountCreated?.();
+  const handleAccountCreated = async (data: AccountFormData) => {
+    await onAccountCreated?.(data);
   };
+
+  const handleCategoryCreated = async (data: CategoryFormData) => {
+    await onCategoryCreated?.(data);
+  };
+
+  // Handle Escape key to close modal (only if no nested modal is open)
+  const handleEscape = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isAccountModalOpen && !isCategoryModalOpen) {
+        onClose();
+      }
+    },
+    [onClose, isAccountModalOpen, isCategoryModalOpen],
+  );
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener("keydown", handleEscape);
+      return () => document.removeEventListener("keydown", handleEscape);
+    }
+  }, [isOpen, handleEscape]);
 
   if (!isOpen) return null;
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div
+        className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="transaction-modal-title"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
         <div className="bg-card-bg rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 border border-card-border">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-foreground">
+            <h2
+              id="transaction-modal-title"
+              className="text-2xl font-bold text-foreground"
+            >
               Thêm giao dịch
             </h2>
             <button
               onClick={onClose}
-              className="text-muted-text hover:text-foreground"
+              aria-label="Đóng"
+              className="text-muted-text hover:text-foreground cursor-pointer"
             >
               <X className="w-6 h-6" />
             </button>
@@ -135,19 +178,44 @@ export default function TransactionModal({
               <label className="block text-sm font-medium text-foreground mb-2">
                 Danh mục
               </label>
-              <select
-                {...register("category")}
-                className={`w-full px-4 py-2 border ${
-                  errors.category ? "border-red-500" : "border-input-border"
-                } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
-              >
-                <option value="">Chọn danh mục</option>
-                {filteredCategories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
+              <div className="flex gap-2">
+                <select
+                  {...register("category")}
+                  className={`flex-1 px-4 py-2 border ${
+                    errors.category ? "border-red-500" : "border-input-border"
+                  } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
+                >
+                  <option value="">Chọn danh mục</option>
+                  {/* System categories */}
+                  {systemCategories.length > 0 && (
+                    <optgroup label="📁 Danh mục hệ thống">
+                      {systemCategories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.icon} {cat.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {/* Custom categories */}
+                  {customCategories.length > 0 && (
+                    <optgroup label="⭐ Danh mục của tôi">
+                      {customCategories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.icon} {cat.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryModalOpen(true)}
+                  className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-1 cursor-pointer"
+                  title="Thêm danh mục mới"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
               {errors.category && (
                 <p className="mt-1 text-sm text-red-600">
                   {errors.category.message}
@@ -169,7 +237,7 @@ export default function TransactionModal({
                   <button
                     type="button"
                     onClick={() => setIsAccountModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     Tạo tài khoản ngay
@@ -264,6 +332,14 @@ export default function TransactionModal({
         isOpen={isAccountModalOpen}
         onClose={() => setIsAccountModalOpen(false)}
         onSubmit={handleAccountCreated}
+      />
+
+      {/* Category Modal */}
+      <CategoryModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        onSubmit={handleCategoryCreated}
+        defaultSide={transactionType as "income" | "expense"}
       />
     </>
   );

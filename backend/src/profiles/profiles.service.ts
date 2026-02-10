@@ -21,16 +21,7 @@ export class ProfilesService extends BaseService {
   async getProfile(userId: string, accessToken: string): Promise<Profile> {
     const supabase = this.getAuthenticatedClient(accessToken);
 
-    // Get profile data
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-
-    if (profileError) throw profileError;
-
-    // Get user email from auth.users
+    // Get user email from auth.users first
     const {
       data: { user },
       error: userError,
@@ -38,6 +29,47 @@ export class ProfilesService extends BaseService {
 
     if (userError) {
       this.logger.warn('Could not fetch user email', userError);
+    }
+
+    // Get profile data - use maybeSingle to handle case when no profile exists
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select(
+        'id, full_name, avatar_url, default_currency, timezone, month_start_day, created_at, updated_at',
+      )
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (profileError) throw profileError;
+
+    // If no profile exists, create one with defaults
+    if (!profileData) {
+      this.logger.log(`Creating missing profile for user ${userId}`);
+      const userName = user?.email ? user.email.split('@')[0] : 'Người dùng';
+      const avatarUrl = user?.user_metadata?.avatar_url || null;
+
+      const { data: newProfile, error: createError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          full_name: userName,
+          avatar_url: avatarUrl,
+          default_currency: 'VND',
+          timezone: 'Asia/Ho_Chi_Minh',
+          month_start_day: 1,
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        this.logger.error('Failed to create profile', createError);
+        throw createError;
+      }
+
+      return {
+        ...newProfile,
+        email: user?.email || undefined,
+      } as Profile;
     }
 
     // Combine profile data with email

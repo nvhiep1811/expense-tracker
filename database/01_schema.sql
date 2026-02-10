@@ -33,7 +33,26 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create type public.alert_type as enum ('budget_near_limit','budget_over_limit');
+  create type public.alert_type as enum (
+    'budget_near_limit',
+    'budget_over_limit',
+    'recurring_reminder',
+    'account_low_balance',
+    'goal_achieved'
+  );
+exception when duplicate_object then null; end $$;
+
+-- Add new alert types if enum already exists
+do $$ begin
+  ALTER TYPE public.alert_type ADD VALUE IF NOT EXISTS 'recurring_reminder';
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  ALTER TYPE public.alert_type ADD VALUE IF NOT EXISTS 'account_low_balance';
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  ALTER TYPE public.alert_type ADD VALUE IF NOT EXISTS 'goal_achieved';
 exception when duplicate_object then null; end $$;
 
 do $$ begin
@@ -119,14 +138,16 @@ begin
     end,
     updated_at = now();
 
-  -- Create default categories for new user
-  perform public.create_default_categories(new.id);
+  -- NOTE: Default categories are now system-wide (user_id = NULL)
+  -- No need to create per-user categories anymore
 
   return new;
 end;
 $$;
 
--- Function to create default categories for new user
+-- DEPRECATED: Function create_default_categories
+-- Default categories are now system-wide (user_id = NULL) in 05_system_categories.sql
+-- Keeping empty function for backward compatibility
 create or replace function public.create_default_categories(p_user_id uuid)
 returns void
 language plpgsql
@@ -134,30 +155,9 @@ security definer
 set search_path = public
 as $$
 begin
-  -- Income categories
-  insert into public.categories (user_id, name, side, icon, color, sort_order)
-  values 
-    (p_user_id, 'Lương chính', 'income', '💰', '#10B981', 1),
-    (p_user_id, 'Lương thêm', 'income', '💵', '#34D399', 2),
-    (p_user_id, 'Tiền thưởng', 'income', '🎁', '#6EE7B7', 3),
-    (p_user_id, 'Lãi suất', 'income', '📈', '#A7F3D0', 4),
-    (p_user_id, 'Khác', 'income', '📊', '#D1FAE5', 5)
-  on conflict (user_id, name, side) do nothing;
-
-  -- Expense categories
-  insert into public.categories (user_id, name, side, icon, color, sort_order)
-  values 
-    (p_user_id, 'Ăn uống', 'expense', '🍔', '#EF4444', 1),
-    (p_user_id, 'Mua sắm', 'expense', '🛍️', '#F87171', 2),
-    (p_user_id, 'Giao thông', 'expense', '🚗', '#FB7185', 3),
-    (p_user_id, 'Giải trí', 'expense', '🎬', '#FCA5A5', 4),
-    (p_user_id, 'Utilities (Điện, nước, gas)', 'expense', '💡', '#FDCAC1', 5),
-    (p_user_id, 'Sức khỏe', 'expense', '🏥', '#FED7AA', 6),
-    (p_user_id, 'Giáo dục', 'expense', '📚', '#FCD34D', 7),
-    (p_user_id, 'Nhà ở', 'expense', '🏠', '#FBBF24', 8),
-    (p_user_id, 'Bảo hiểm', 'expense', '🛡️', '#F59E0B', 9),
-    (p_user_id, 'Khác', 'expense', '📌', '#D97706', 10)
-  on conflict (user_id, name, side) do nothing;
+  -- No longer needed - system categories are shared across all users
+  -- See 05_system_categories.sql for system category definitions
+  null;
 end $$;
 
 -- Function check email existence before creating profile
@@ -236,10 +236,11 @@ using (auth.uid() = user_id);
 
 -- =====================================================================
 -- TABLE: categories
+-- NOTE: System categories have user_id = NULL and is_system = true
 -- =====================================================================
 create table if not exists public.categories (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete cascade, -- NULL for system categories
 
   name text not null,
   side public.category_side not null default 'expense', -- income|expense
@@ -248,24 +249,37 @@ create table if not exists public.categories (
   color text,
   parent_id uuid references public.categories(id),
   sort_order int not null default 0,
+  is_system boolean not null default false, -- true for shared system categories
 
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  deleted_at timestamptz,
-
-  unique(user_id, name, side)
+  deleted_at timestamptz
 );
+
+-- Unique constraint for user-specific categories
+create unique index if not exists categories_user_name_side_unique 
+  on public.categories (user_id, name, side) 
+  where user_id is not null and deleted_at is null;
+
+-- Unique constraint for system categories (where user_id is NULL)
+create unique index if not exists categories_system_name_side_unique 
+  on public.categories (name, side) 
+  where user_id is null and deleted_at is null;
 
 create index if not exists categories_user_idx
   on public.categories(user_id) where deleted_at is null;
 
 alter table public.categories enable row level security;
 
--- RLS policies: categories
+-- RLS policies: categories (updated for system categories)
 drop policy if exists "categories_select_own" on public.categories;
-create policy "categories_select_own"
+drop policy if exists "categories_select_own_and_system" on public.categories;
+create policy "categories_select_own_and_system"
 on public.categories for select
-using (auth.uid() = user_id);
+using (
+  user_id is null  -- System categories visible to all
+  or auth.uid() = user_id  -- User's own categories
+);
 
 drop policy if exists "categories_insert_own" on public.categories;
 create policy "categories_insert_own"
@@ -275,13 +289,35 @@ with check (auth.uid() = user_id);
 drop policy if exists "categories_update_own" on public.categories;
 create policy "categories_update_own"
 on public.categories for update
-using (auth.uid() = user_id)
-with check (auth.uid() = user_id);
+using (auth.uid() = user_id and user_id is not null)
+with check (auth.uid() = user_id and user_id is not null);
 
 drop policy if exists "categories_delete_own" on public.categories;
 create policy "categories_delete_own"
 on public.categories for delete
-using (auth.uid() = user_id);
+using (auth.uid() = user_id and user_id is not null);
+
+-- Insert default system categories (idempotent - uses ON CONFLICT)
+INSERT INTO public.categories (user_id, name, side, icon, color, sort_order, is_system)
+VALUES 
+  -- Income categories
+  (NULL, 'Lương chính', 'income', '💰', '#10B981', 1, true),
+  (NULL, 'Lương thêm', 'income', '💵', '#34D399', 2, true),
+  (NULL, 'Tiền thưởng', 'income', '🎁', '#6EE7B7', 3, true),
+  (NULL, 'Lãi suất', 'income', '📈', '#A7F3D0', 4, true),
+  (NULL, 'Thu nhập khác', 'income', '📊', '#D1FAE5', 5, true),
+  -- Expense categories  
+  (NULL, 'Ăn uống', 'expense', '🍔', '#EF4444', 1, true),
+  (NULL, 'Mua sắm', 'expense', '🛍️', '#F87171', 2, true),
+  (NULL, 'Giao thông', 'expense', '🚗', '#FB7185', 3, true),
+  (NULL, 'Giải trí', 'expense', '🎬', '#FCA5A5', 4, true),
+  (NULL, 'Điện, nước, gas', 'expense', '💡', '#FDCAC1', 5, true),
+  (NULL, 'Sức khỏe', 'expense', '🏥', '#FED7AA', 6, true),
+  (NULL, 'Giáo dục', 'expense', '📚', '#FCD34D', 7, true),
+  (NULL, 'Nhà ở', 'expense', '🏠', '#FBBF24', 8, true),
+  (NULL, 'Bảo hiểm', 'expense', '🛡️', '#F59E0B', 9, true),
+  (NULL, 'Chi tiêu khác', 'expense', '📌', '#D97706', 10, true)
+ON CONFLICT DO NOTHING;
 
 -- =====================================================================
 -- TABLE: recurring_rules
@@ -480,13 +516,17 @@ create table if not exists public.alerts (
   user_id uuid not null references auth.users(id) on delete cascade,
 
   type public.alert_type not null,
-  budget_id uuid references public.budgets(id),
-  category_id uuid references public.categories(id),
+  budget_id uuid references public.budgets(id) on delete set null,
+  category_id uuid references public.categories(id) on delete set null,
 
   payload jsonb not null default '{}'::jsonb,
   is_read boolean not null default false,
+  dismissed_at timestamptz,
   occurred_at timestamptz not null default now()
 );
+
+-- Add dismissed_at column if table already exists
+ALTER TABLE public.alerts ADD COLUMN IF NOT EXISTS dismissed_at timestamptz;
 
 create index if not exists alerts_user_time_idx
   on public.alerts(user_id, occurred_at desc);

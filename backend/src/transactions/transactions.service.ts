@@ -72,7 +72,9 @@ export class TransactionsService extends BaseService {
     const supabase = this.getAuthenticatedClient(accessToken);
     const { data, error } = await supabase
       .from('transactions')
-      .select('*')
+      .select(
+        'id, user_id, type, amount, occurred_on, account_id, category_id, description, note, tags, attachments, transfer_account_id, recurring_rule_id, created_at, updated_at, deleted_at',
+      )
       .eq('id', transactionId)
       .eq('user_id', userId)
       .is('deleted_at', null)

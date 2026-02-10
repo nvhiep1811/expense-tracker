@@ -9,7 +9,7 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
-import { BudgetsService } from './budgets.service';
+import { BudgetsService, BudgetStatusResponse } from './budgets.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import type { Request } from 'express';
@@ -39,7 +39,7 @@ export class BudgetsController {
   async getBudgetStatus(
     @CurrentUser() user: User,
     @Req() request: Request,
-  ): Promise<any[]> {
+  ): Promise<BudgetStatusResponse[]> {
     const token = extractToken(request);
     return this.budgetsService.getBudgetStatus(user.id, token);
   }
@@ -83,5 +83,18 @@ export class BudgetsController {
   ): Promise<Budget> {
     const token = extractToken(request);
     return this.budgetsService.remove(user.id, id, token);
+  }
+
+  /**
+   * Renew an expired budget - creates a new budget for the next period
+   */
+  @Post(':id/renew')
+  async renew(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Req() request: Request,
+  ): Promise<Budget> {
+    const token = extractToken(request);
+    return this.budgetsService.renewBudget(user.id, id, token);
   }
 }

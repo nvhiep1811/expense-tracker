@@ -8,7 +8,7 @@ export default function ReportsPage() {
     <>
       <Header title="Báo cáo" subtitle="Xem báo cáo tài chính chi tiết" />
 
-      <main className="flex-1 overflow-y-auto p-8">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
         <div className="text-center py-20">
           <DollarSign className="w-16 h-16 text-muted-text mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-muted-text">

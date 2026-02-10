@@ -58,7 +58,8 @@ SELECT
     WHEN b.limit_amount > 0 
     THEN (COALESCE(t.spent, 0)::decimal / b.limit_amount * 100)
     ELSE 0 
-  END AS percentage
+  END AS percentage,
+  b.rollover
 FROM public.budgets b
 LEFT JOIN public.categories c ON c.id = b.category_id AND c.deleted_at IS NULL
 LEFT JOIN (
@@ -78,6 +79,12 @@ LEFT JOIN (
   GROUP BY t.category_id, t.user_id, b2.id
 ) t ON t.budget_id = b.id
 WHERE b.deleted_at IS NULL;
+
+-- =====================================================================
+-- NOTE: If you get error about column order change, run this first:
+-- DROP VIEW IF EXISTS public.v_budget_status;
+-- Then run this file again.
+-- =====================================================================
 
 -- =====================================================================
 -- Performance Impact:

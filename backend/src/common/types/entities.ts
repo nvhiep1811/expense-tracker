@@ -15,13 +15,14 @@ export interface Account {
 
 export interface Category {
   id: string;
-  user_id: string;
+  user_id: string | null; // NULL for system categories
   name: string;
   side: 'income' | 'expense';
   icon?: string;
   color?: string;
   parent_id?: string;
   sort_order: number;
+  is_system: boolean; // true for shared system categories
   created_at: string;
   updated_at: string;
   deleted_at?: string;
@@ -97,12 +98,28 @@ export interface RecurringRule {
 export interface Alert {
   id: string;
   user_id: string;
-  type: string;
-  message: string;
-  data?: any;
+  type:
+    | 'budget_near_limit'
+    | 'budget_over_limit'
+    | 'recurring_reminder'
+    | 'account_low_balance'
+    | 'goal_achieved';
+  budget_id?: string;
+  category_id?: string;
+  payload: {
+    budget_id?: string;
+    category_id?: string;
+    category_name?: string;
+    spent?: number;
+    limit_amount?: number;
+    percentage?: number;
+    remaining?: number;
+    period?: string;
+    [key: string]: unknown;
+  };
   is_read: boolean;
   occurred_at: string;
-  created_at: string;
+  dismissed_at?: string;
 }
 
 export interface User {

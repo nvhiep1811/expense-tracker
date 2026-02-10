@@ -37,4 +37,10 @@ export const budgetsAPI = {
     const response = await api.delete(`/budgets/${id}`);
     return response.data;
   },
+
+  // Renew an expired budget - creates a new budget for the next period
+  renew: async (id: string): Promise<Budget> => {
+    const response = await api.post(`/budgets/${id}/renew`);
+    return response.data;
+  },
 };

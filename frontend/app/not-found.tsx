@@ -44,7 +44,7 @@ export default function NotFound() {
 
           <button
             onClick={() => window.history.back()}
-            className="flex items-center gap-2 px-6 py-3 bg-card-bg border border-card-border text-foreground rounded-lg hover:bg-hover-bg transition-colors font-medium"
+            className="flex items-center gap-2 px-6 py-3 bg-card-bg border border-card-border text-foreground rounded-lg hover:bg-hover-bg transition-colors font-medium cursor-pointer"
           >
             <ArrowLeft className="w-5 h-5" />
             Quay lại

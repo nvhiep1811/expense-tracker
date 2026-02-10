@@ -57,7 +57,7 @@ export default function GuestNav() {
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-muted-text hover:text-foreground"
+            className="md:hidden p-2 text-muted-text hover:text-foreground cursor-pointer"
           >
             {mobileMenuOpen ? (
               <X className="w-6 h-6" />
