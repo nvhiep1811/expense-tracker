@@ -4,13 +4,15 @@ import { X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { budgetSchema, type BudgetFormData } from "@/lib/validations";
-import type { Category } from "@/types";
+import type { Category, BudgetStatus } from "@/types";
+import { useEffect } from "react";
 
 interface BudgetModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: BudgetFormData) => void;
   categories: Category[];
+  editingBudget?: BudgetStatus | null;
 }
 
 export default function BudgetModal({
@@ -18,6 +20,7 @@ export default function BudgetModal({
   onClose,
   onSubmit: handleFormSubmit,
   categories,
+  editingBudget,
 }: BudgetModalProps) {
   const {
     register,
@@ -32,6 +35,31 @@ export default function BudgetModal({
       rollover: false,
     },
   });
+
+  // Reset form when modal opens/closes or editing budget changes
+  useEffect(() => {
+    if (isOpen && editingBudget) {
+      reset({
+        category: editingBudget.category_id,
+        amount: editingBudget.limit_amount,
+        period: editingBudget.period,
+        start_date: editingBudget.start_date.split("T")[0],
+        end_date: editingBudget.end_date.split("T")[0],
+        alert_threshold: editingBudget.alert_threshold_pct,
+        rollover: editingBudget.rollover ?? false,
+      });
+    } else if (isOpen) {
+      reset({
+        category: "",
+        amount: undefined,
+        period: "monthly",
+        start_date: "",
+        end_date: "",
+        alert_threshold: 80,
+        rollover: false,
+      });
+    }
+  }, [isOpen, editingBudget, reset]);
 
   const onSubmit = (data: BudgetFormData) => {
     handleFormSubmit(data);
@@ -48,7 +76,9 @@ export default function BudgetModal({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-card-bg rounded-xl max-w-md w-full p-6 border border-card-border max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-foreground">Thêm ngân sách</h2>
+          <h2 className="text-2xl font-bold text-foreground">
+            {editingBudget ? "Sửa ngân sách" : "Thêm ngân sách"}
+          </h2>
           <button
             onClick={onClose}
             className="text-muted-text hover:text-foreground"
@@ -231,7 +261,7 @@ export default function BudgetModal({
               disabled={expenseCategories.length === 0}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Thêm
+              {editingBudget ? "Cập nhật" : "Thêm"}
             </button>
           </div>
         </form>

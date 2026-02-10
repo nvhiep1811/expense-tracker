@@ -163,6 +163,7 @@ export interface BudgetStatus {
   end_date: string;
   limit_amount: number;
   alert_threshold_pct: number;
+  rollover: boolean;
   category_name?: string;
   category_color?: string;
   spent: number;
