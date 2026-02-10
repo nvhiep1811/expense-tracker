@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, Trash2, X } from "lucide-react";
+import { useEffect, useCallback } from "react";
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -25,6 +26,23 @@ export default function ConfirmModal({
   variant = "danger",
   isLoading = false,
 }: ConfirmModalProps) {
+  // Handle Escape key to close modal
+  const handleEscape = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isLoading) {
+        onClose();
+      }
+    },
+    [onClose, isLoading],
+  );
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener("keydown", handleEscape);
+      return () => document.removeEventListener("keydown", handleEscape);
+    }
+  }, [isOpen, handleEscape]);
+
   if (!isOpen) return null;
 
   const variantStyles = {
@@ -48,7 +66,15 @@ export default function ConfirmModal({
   const styles = variantStyles[variant];
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-modal-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isLoading) onClose();
+      }}
+    >
       <div className="bg-card-bg rounded-xl max-w-md w-full p-6 border border-card-border shadow-xl">
         {/* Header */}
         <div className="flex items-start gap-4">
@@ -57,11 +83,17 @@ export default function ConfirmModal({
           </div>
           <div className="flex-1">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+              <h3
+                id="confirm-modal-title"
+                className="text-lg font-semibold text-foreground"
+              >
+                {title}
+              </h3>
               <button
                 onClick={onClose}
                 disabled={isLoading}
-                className="text-muted-text hover:text-foreground transition-colors disabled:opacity-50"
+                aria-label="Đóng"
+                className="text-muted-text hover:text-foreground transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -76,7 +108,7 @@ export default function ConfirmModal({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="flex-1 px-4 py-2.5 border border-card-border rounded-lg hover:bg-hover-bg text-foreground font-medium transition-colors disabled:opacity-50"
+            className="flex-1 px-4 py-2.5 border border-card-border rounded-lg hover:bg-hover-bg text-foreground font-medium transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             {cancelText}
           </button>
@@ -87,7 +119,7 @@ export default function ConfirmModal({
               onClose();
             }}
             disabled={isLoading}
-            className={`flex-1 px-4 py-2.5 text-white rounded-lg font-medium transition-colors focus:ring-2 focus:ring-offset-2 disabled:opacity-50 ${styles.button}`}
+            className={`flex-1 px-4 py-2.5 text-white rounded-lg font-medium transition-colors focus:ring-2 focus:ring-offset-2 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed ${styles.button}`}
           >
             {isLoading ? "Đang xử lý..." : confirmText}
           </button>

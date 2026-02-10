@@ -1,14 +1,15 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { accountSchema, type AccountFormData } from "@/lib/validations";
+import { useState, useEffect, useCallback } from "react";
 
 interface AccountModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: AccountFormData) => void;
+  onSubmit: (data: AccountFormData) => Promise<void>;
 }
 
 export default function AccountModal({
@@ -16,6 +17,8 @@ export default function AccountModal({
   onClose,
   onSubmit: handleFormSubmit,
 }: AccountModalProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -30,22 +33,73 @@ export default function AccountModal({
     },
   });
 
-  const onSubmit = (data: AccountFormData) => {
-    handleFormSubmit(data);
-    reset();
-    onClose();
+  useEffect(() => {
+    if (isOpen) {
+      reset({
+        name: "",
+        type: "bank",
+        balance: 0,
+        color: "#3b82f6",
+      });
+      setIsSubmitting(false);
+    }
+  }, [isOpen, reset]);
+
+  // Handle Escape key to close modal
+  const handleEscape = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isSubmitting) {
+        onClose();
+      }
+    },
+    [onClose, isSubmitting],
+  );
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener("keydown", handleEscape);
+      return () => document.removeEventListener("keydown", handleEscape);
+    }
+  }, [isOpen, handleEscape]);
+
+  const onSubmit = async (data: AccountFormData) => {
+    try {
+      setIsSubmitting(true);
+      await handleFormSubmit(data);
+      reset();
+      onClose();
+    } catch {
+      // Error is handled by parent, keep modal open
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-60"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="account-modal-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isSubmitting) onClose();
+      }}
+    >
       <div className="bg-card-bg rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 border border-card-border">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-foreground">Thêm tài khoản</h2>
+          <h2
+            id="account-modal-title"
+            className="text-2xl font-bold text-foreground"
+          >
+            Thêm tài khoản
+          </h2>
           <button
             onClick={onClose}
-            className="text-muted-text hover:text-foreground"
+            disabled={isSubmitting}
+            aria-label="Đóng"
+            className="text-muted-text hover:text-foreground disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             <X className="w-6 h-6" />
           </button>
@@ -142,15 +196,24 @@ export default function AccountModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-card-border rounded-lg hover:bg-hover-bg text-foreground"
+              disabled={isSubmitting}
+              className="flex-1 px-4 py-2 border border-card-border rounded-lg hover:bg-hover-bg text-foreground disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               Hủy
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              disabled={isSubmitting}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Thêm
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Đang thêm...
+                </>
+              ) : (
+                "Thêm"
+              )}
             </button>
           </div>
         </form>
