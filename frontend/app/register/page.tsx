@@ -281,7 +281,7 @@ export default function RegisterPage() {
                 setIsGoogleLoading(true);
                 try {
                   await loginWithGoogle();
-                } catch (error) {
+                } catch {
                   // Error already handled in loginWithGoogle
                 } finally {
                   setIsGoogleLoading(false);
@@ -322,7 +322,7 @@ export default function RegisterPage() {
                 setIsFacebookLoading(true);
                 try {
                   await loginWithFacebook();
-                } catch (error) {
+                } catch {
                   // Error already handled in loginWithFacebook
                 } finally {
                   setIsFacebookLoading(false);

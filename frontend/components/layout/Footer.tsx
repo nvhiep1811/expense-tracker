@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, Mail, Phone } from "lucide-react";
+import { Heart, Mail } from "lucide-react";
 import Link from "next/link";
 
 export default function Footer() {
@@ -25,7 +25,7 @@ export default function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link
-                  href="/about"
+                  href="/#about"
                   className="text-sm hover:text-white transition"
                 >
                   Về chúng tôi
@@ -33,7 +33,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/features"
+                  href="/#features"
                   className="text-sm hover:text-white transition"
                 >
                   Tính năng
@@ -41,7 +41,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/pricing"
+                  href="/#pricing"
                   className="text-sm hover:text-white transition"
                 >
                   Bảng giá
@@ -49,10 +49,10 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/blog"
+                  href="/dashboard"
                   className="text-sm hover:text-white transition"
                 >
-                  Blog
+                  Bảng điều khiển
                 </Link>
               </li>
             </ul>
@@ -63,28 +63,22 @@ export default function Footer() {
             <h3 className="text-white text-lg font-semibold mb-4">Hỗ trợ</h3>
             <ul className="space-y-2">
               <li>
-                <Link
-                  href="/help"
+                <a
+                  href="https://github.com/nvhiep1811/expense-tracker"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-sm hover:text-white transition"
                 >
-                  Trung tâm trợ giúp
-                </Link>
+                  GitHub
+                </a>
               </li>
               <li>
-                <Link
-                  href="/faq"
-                  className="text-sm hover:text-white transition"
-                >
-                  Câu hỏi thường gặp
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/contact"
+                <a
+                  href="mailto:nguyenvohiep.29122004@gmail.com"
                   className="text-sm hover:text-white transition"
                 >
                   Liên hệ
-                </Link>
+                </a>
               </li>
               <li>
                 <Link
@@ -92,6 +86,14 @@ export default function Footer() {
                   className="text-sm hover:text-white transition"
                 >
                   Chính sách bảo mật
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/terms"
+                  className="text-sm hover:text-white transition"
+                >
+                  Điều khoản dịch vụ
                 </Link>
               </li>
             </ul>
@@ -104,10 +106,6 @@ export default function Footer() {
               <li className="flex items-center space-x-2">
                 <Mail className="w-4 h-4" />
                 <span className="text-sm">nguyenvohiep.29122004@gmail.com</span>
-              </li>
-              <li className="flex items-center space-x-2">
-                <Phone className="w-4 h-4" />
-                <span className="text-sm">0896 xx xxxx</span>
               </li>
             </ul>
           </div>
