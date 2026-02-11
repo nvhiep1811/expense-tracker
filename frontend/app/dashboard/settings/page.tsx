@@ -135,7 +135,7 @@ export default function SettingsPage() {
       setPreferencesValue("default_currency", data.default_currency || "VND");
       setPreferencesValue("timezone", data.timezone || "Asia/Ho_Chi_Minh");
       setPreferencesValue("month_start_day", data.month_start_day || 1);
-    } catch (_error) {
+    } catch {
       toast.error("Không thể tải thông tin cài đặt");
     } finally {
       setLoading(false);
@@ -147,7 +147,7 @@ export default function SettingsPage() {
       await profilesAPI.updateMyProfile({ full_name: data.full_name });
       toast.success("Cập nhật thông tin thành công!");
       fetchProfile();
-    } catch (_error) {
+    } catch {
       toast.error("Không thể cập nhật thông tin");
     }
   };
@@ -159,7 +159,7 @@ export default function SettingsPage() {
         "Yêu cầu thay đổi email đã được gửi. Vui lòng kiểm tra hộp thư!",
       );
       resetEmail();
-    } catch (_error) {
+    } catch {
       toast.error("Không thể thay đổi email");
     }
   };
@@ -172,7 +172,7 @@ export default function SettingsPage() {
       );
       toast.success("Mật khẩu đã được thay đổi thành công!");
       resetPassword();
-    } catch (_error) {
+    } catch {
       toast.error(
         "Không thể thay đổi mật khẩu. Vui lòng kiểm tra mật khẩu hiện tại.",
       );
@@ -188,7 +188,7 @@ export default function SettingsPage() {
       });
       toast.success("Cập nhật tùy chọn thành công!");
       fetchProfile();
-    } catch (_error) {
+    } catch {
       toast.error("Không thể cập nhật tùy chọn");
     }
   };
@@ -322,7 +322,7 @@ export default function SettingsPage() {
                         <button
                           type="submit"
                           disabled={profileSubmitting}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         >
                           {profileSubmitting ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -400,7 +400,7 @@ export default function SettingsPage() {
                         <button
                           type="submit"
                           disabled={emailSubmitting}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         >
                           {emailSubmitting ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -485,7 +485,7 @@ export default function SettingsPage() {
                         <button
                           type="submit"
                           disabled={passwordSubmitting}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         >
                           {passwordSubmitting ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -636,7 +636,7 @@ export default function SettingsPage() {
                         <button
                           type="submit"
                           disabled={preferencesSubmitting}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         >
                           {preferencesSubmitting ? (
                             <Loader2 className="w-4 h-4 animate-spin" />

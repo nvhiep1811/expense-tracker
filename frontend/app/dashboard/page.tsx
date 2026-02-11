@@ -44,7 +44,6 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchDashboardData();
     checkUnreadAlerts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Check for unread alerts and show notification on login
@@ -343,7 +342,7 @@ export default function DashboardPage() {
                     <p className="mb-4">Chưa có giao dịch nào</p>
                     <button
                       onClick={() => router.push("/dashboard/transactions")}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
                       Thêm giao dịch
@@ -415,7 +414,7 @@ export default function DashboardPage() {
                     <p className="mb-4">Chưa có ngân sách nào</p>
                     <button
                       onClick={() => router.push("/dashboard/budgets")}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
                       Tạo ngân sách
