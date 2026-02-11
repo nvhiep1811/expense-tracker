@@ -56,7 +56,6 @@ export default function Header({
               <p className="text-sm font-medium text-foreground">
                 {mounted ? user?.name || "User" : "User"}
               </p>
-              <p className="text-xs text-muted-text">Premium</p>
             </div>
             <button
               onClick={logout}
