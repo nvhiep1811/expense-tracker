@@ -1,10 +1,12 @@
 "use client";
 
-import { X, Check, Loader2 } from "lucide-react";
+import { X, Check, Loader2, Palette } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useEffect, useState, useCallback } from "react";
+import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR } from "@/constants/colors";
+import CustomColorPicker from "@/components/ui/CustomColorPicker";
 
 // Category icons with SVG images for better visuals
 const CATEGORY_ICONS = [
@@ -28,32 +30,10 @@ const CATEGORY_ICONS = [
   { id: "phone", emoji: "📱", label: "Điện thoại" },
   { id: "gym", emoji: "🏋️", label: "Thể thao" },
   { id: "coffee", emoji: "☕", label: "Cafe" },
-];
-
-// Vibrant category colors
-const CATEGORY_COLORS = [
-  // Row 1: Primary colors
-  "#10B981",
-  "#34D399",
-  "#22C55E",
-  "#84CC16",
-  "#EAB308",
-  "#EF4444",
-  "#F97316",
-  "#FB7185",
-  "#EC4899",
-  "#F9A8D4",
-  // Row 2: Secondary colors
-  "#3B82F6",
-  "#6366F1",
-  "#8B5CF6",
-  "#A855F7",
-  "#06B6D4",
-  "#14B8A6",
-  "#0EA5E9",
-  "#F59E0B",
-  "#FBBF24",
-  "#FCD34D",
+  { id: "pet", emoji: "🐕", label: "Thú cưng" },
+  { id: "baby", emoji: "👶", label: "Em bé" },
+  { id: "beauty", emoji: "💄", label: "Làm đẹp" },
+  { id: "music", emoji: "🎵", label: "Âm nhạc" },
 ];
 
 const categorySchema = z.object({
@@ -84,6 +64,7 @@ export default function CategoryModal({
   defaultSide = "expense",
 }: CategoryModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCustomPicker, setShowCustomPicker] = useState(false);
 
   const {
     register,
@@ -97,7 +78,7 @@ export default function CategoryModal({
     defaultValues: {
       side: defaultSide,
       icon: "📌",
-      color: "#3B82F6",
+      color: DEFAULT_CATEGORY_COLOR,
     },
   });
 
@@ -110,7 +91,7 @@ export default function CategoryModal({
         name: "",
         side: defaultSide,
         icon: "📌",
-        color: "#3B82F6",
+        color: DEFAULT_CATEGORY_COLOR,
       });
       setIsSubmitting(false);
     }
@@ -158,7 +139,7 @@ export default function CategoryModal({
         if (e.target === e.currentTarget && !isSubmitting) onClose();
       }}
     >
-      <div className="bg-card-bg rounded-xl max-w-md w-full p-6 border border-card-border max-h-[90vh] overflow-y-auto">
+      <div className="bg-card-bg rounded-xl max-w-md w-full p-4 sm:p-6 mx-4 border border-card-border max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2
             id="category-modal-title"
@@ -170,7 +151,7 @@ export default function CategoryModal({
             onClick={onClose}
             disabled={isSubmitting}
             aria-label="Đóng"
-            className="text-muted-text hover:text-foreground disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            className="text-muted-text hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <X className="w-6 h-6" />
           </button>
@@ -220,7 +201,7 @@ export default function CategoryModal({
             <label className="block text-sm font-medium text-foreground mb-3">
               Biểu tượng
             </label>
-            <div className="grid grid-cols-10 gap-2">
+            <div className="grid grid-cols-8 gap-2">
               {CATEGORY_ICONS.map((iconItem) => (
                 <button
                   key={iconItem.id}
@@ -255,25 +236,53 @@ export default function CategoryModal({
             <label className="block text-sm font-medium text-foreground mb-3">
               Màu sắc
             </label>
-            <div className="grid grid-cols-10 gap-2">
+            <div className="grid grid-cols-8 gap-2">
               {CATEGORY_COLORS.map((color) => (
                 <button
                   key={color}
                   type="button"
-                  onClick={() => setValue("color", color)}
-                  className={`relative w-10 h-10 rounded-full transition-all flex items-center justify-center cursor-pointer ${
-                    selectedColor === color
+                  onClick={() => {
+                    setValue("color", color);
+                    setShowCustomPicker(false);
+                  }}
+                  className={`relative w-9 h-9 rounded-full transition-all flex items-center justify-center cursor-pointer ${
+                    selectedColor === color && !showCustomPicker
                       ? "ring-2 ring-offset-2 ring-offset-card-bg scale-110"
                       : "hover:scale-110"
                   }`}
                   style={{ backgroundColor: color }}
                 >
-                  {selectedColor === color && (
-                    <Check className="w-5 h-5 text-white drop-shadow-md" />
+                  {selectedColor === color && !showCustomPicker && (
+                    <Check className="w-4 h-4 text-white drop-shadow-md" />
                   )}
                 </button>
               ))}
+              {/* Custom Color Button */}
+              <button
+                type="button"
+                onClick={() => setShowCustomPicker(!showCustomPicker)}
+                className={`relative w-9 h-9 rounded-full transition-all flex items-center justify-center cursor-pointer border-2 ${
+                  showCustomPicker
+                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-110"
+                    : "border-dashed border-input-border hover:border-blue-400 hover:bg-hover-bg hover:scale-110"
+                }`}
+                title="Màu tùy chỉnh"
+              >
+                <Palette className="w-4 h-4 text-muted-text" />
+              </button>
             </div>
+
+            {/* Custom Color Picker */}
+            {showCustomPicker && (
+              <CustomColorPicker
+                value={selectedColor || DEFAULT_CATEGORY_COLOR}
+                onChange={(color) => {
+                  setValue("color", color);
+                  setShowCustomPicker(false);
+                }}
+                onClose={() => setShowCustomPicker(false)}
+              />
+            )}
           </div>
 
           {/* Preview */}
@@ -305,14 +314,14 @@ export default function CategoryModal({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2.5 border border-card-border rounded-xl hover:bg-hover-bg text-foreground font-medium transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2.5 border border-card-border rounded-xl hover:bg-hover-bg text-foreground font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>
