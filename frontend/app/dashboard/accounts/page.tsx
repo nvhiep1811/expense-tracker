@@ -1,39 +1,34 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import Header from "@/components/layout/Header";
-import { Wallet, Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import AccountModal from "@/components/modals/AccountModal";
 import type { AccountFormData } from "@/lib/validations";
 import { accountsAPI } from "@/lib/api";
 import { toast } from "react-hot-toast";
-import type { Account } from "@/types";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useAccounts, dataEvents } from "@/contexts/DataContext";
+
+// Account type info with emojis
+const ACCOUNT_TYPE_INFO: Record<string, { label: string; emoji: string }> = {
+  cash: { label: "Tiền mặt", emoji: "💵" },
+  bank: { label: "Ngân hàng", emoji: "🏦" },
+  e_wallet: { label: "Ví điện tử", emoji: "📱" },
+};
+
 export default function AccountsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(true);
   const formatCurrency = useCurrency();
 
-  const fetchAccounts = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await accountsAPI.getAll();
-      setAccounts(data.filter((acc: Account) => !acc.is_archived));
-    } catch (error: unknown) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Không thể tải danh sách tài khoản",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Use global accounts from DataContext
+  const { accounts: allAccounts, loading } = useAccounts();
 
-  useEffect(() => {
-    fetchAccounts();
-  }, [fetchAccounts]);
+  // Filter out archived accounts
+  const accounts = useMemo(
+    () => allAccounts.filter((acc) => !acc.is_archived),
+    [allAccounts],
+  );
 
   // Memoize total balance calculation
   const totalBalance = useMemo(
@@ -41,17 +36,8 @@ export default function AccountsPage() {
     [accounts],
   );
 
-  const getAccountTypeLabel = (type: string) => {
-    switch (type) {
-      case "cash":
-        return "Tiền mặt";
-      case "bank":
-        return "Ngân hàng";
-      case "e_wallet":
-        return "Ví điện tử";
-      default:
-        return type;
-    }
+  const getAccountTypeInfo = (type: string) => {
+    return ACCOUNT_TYPE_INFO[type] || { label: type, emoji: "💰" };
   };
 
   const handleAddAccount = async (data: AccountFormData) => {
@@ -64,7 +50,7 @@ export default function AccountsPage() {
         color: data.color,
       });
       toast.success("Thêm tài khoản thành công!");
-      fetchAccounts(); // Reload accounts
+      dataEvents.emit("accounts:created");
     } catch (error: unknown) {
       toast.error(
         error instanceof Error ? error.message : "Không thể thêm tài khoản",
@@ -83,18 +69,18 @@ export default function AccountsPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-foreground">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground">
                   Tổng tài sản
                 </h2>
-                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-2">
+                <p className="text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-400 mt-2">
                   {formatCurrency(totalBalance)}
                 </p>
               </div>
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 cursor-pointer"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center space-x-2 shrink-0"
               >
                 <Plus className="w-5 h-5" />
                 <span>Thêm tài khoản</span>
@@ -103,7 +89,7 @@ export default function AccountsPage() {
 
             {accounts.length === 0 ? (
               <div className="text-center py-12">
-                <Wallet className="w-16 h-16 mx-auto text-muted-text mb-4" />
+                <span className="text-6xl mb-4 block">💰</span>
                 <h3 className="text-xl font-semibold text-muted-text mb-2">
                   Chưa có tài khoản nào
                 </h3>
@@ -112,7 +98,7 @@ export default function AccountsPage() {
                 </p>
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   <Plus className="w-5 h-5" />
                   Thêm tài khoản đầu tiên
@@ -120,38 +106,38 @@ export default function AccountsPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {accounts.map((acc) => (
-                  <div
-                    key={acc.id}
-                    className="bg-card-bg rounded-xl p-6 border-2 border-card-border hover:border-blue-500 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <div
-                        className="w-12 h-12 rounded-lg flex items-center justify-center"
-                        style={{
-                          backgroundColor: (acc.color || "#3b82f6") + "20",
-                        }}
-                      >
-                        <Wallet
-                          className="w-6 h-6"
-                          style={{ color: acc.color || "#3b82f6" }}
-                        />
-                      </div>
-                      <span className="px-3 py-1 text-xs rounded-full bg-hover-bg text-muted-text">
-                        {getAccountTypeLabel(acc.type)}
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">
-                      {acc.name}
-                    </h3>
-                    <p
-                      className="text-2xl font-bold"
-                      style={{ color: acc.color || "#3b82f6" }}
+                {accounts.map((acc) => {
+                  const typeInfo = getAccountTypeInfo(acc.type);
+                  return (
+                    <div
+                      key={acc.id}
+                      className="bg-card-bg rounded-xl p-6 border-2 border-card-border hover:border-blue-500 hover:shadow-lg transition-all group"
                     >
-                      {formatCurrency(acc.current_balance)}
-                    </p>
-                  </div>
-                ))}
+                      <div className="flex items-center justify-between mb-4">
+                        <div
+                          className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-transform group-hover:scale-110"
+                          style={{
+                            backgroundColor: (acc.color || "#3b82f6") + "20",
+                          }}
+                        >
+                          {typeInfo.emoji}
+                        </div>
+                        <span className="px-3 py-1 text-xs rounded-full bg-hover-bg text-muted-text">
+                          {typeInfo.label}
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                        {acc.name}
+                      </h3>
+                      <p
+                        className="text-2xl font-bold"
+                        style={{ color: acc.color || "#3b82f6" }}
+                      >
+                        {formatCurrency(acc.current_balance)}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

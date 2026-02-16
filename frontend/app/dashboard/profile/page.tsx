@@ -212,7 +212,7 @@ export default function ProfilePage() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={updating}
-              className="absolute bottom-0 right-0 p-1.5 sm:p-2 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg disabled:bg-gray-400 transition-colors cursor-pointer disabled:cursor-not-allowed"
+              className="absolute bottom-0 right-0 p-1.5 sm:p-2 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg disabled:bg-gray-400 transition-colors disabled:cursor-not-allowed"
             >
               {updating ? (
                 <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />

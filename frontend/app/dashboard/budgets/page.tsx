@@ -21,13 +21,13 @@ import type { BudgetFormData } from "@/lib/validations";
 import type { CategoryFormData } from "@/components/modals/CategoryModal";
 import { budgetsAPI, categoriesAPI } from "@/lib/api";
 import toast from "react-hot-toast";
-import type { BudgetStatus, Category } from "@/types";
+import type { BudgetStatus } from "@/types";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useCategories, dataEvents } from "@/contexts/DataContext";
 
 export default function BudgetsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [budgets, setBudgets] = useState<BudgetStatus[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showExpired, setShowExpired] = useState(false);
   const [editingBudget, setEditingBudget] = useState<BudgetStatus | null>(null);
@@ -40,17 +40,14 @@ export default function BudgetsPage() {
   }>({ isOpen: false, budgetId: null, budgetName: "" });
   const formatCurrency = useCurrency();
 
-  const fetchData = useCallback(async () => {
+  // Use global categories from DataContext
+  const { categories } = useCategories();
+
+  const fetchBudgets = useCallback(async () => {
     try {
       setLoading(true);
-
-      const [budgetsData, categoriesData] = await Promise.all([
-        budgetsAPI.getStatus(),
-        categoriesAPI.getAll(),
-      ]);
-
+      const budgetsData = await budgetsAPI.getStatus();
       setBudgets(budgetsData);
-      setCategories(categoriesData);
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Không thể tải dữ liệu";
@@ -61,8 +58,18 @@ export default function BudgetsPage() {
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchBudgets();
+  }, [fetchBudgets]);
+
+  // Listen for budget data changes
+  useEffect(() => {
+    const unsubscribe = dataEvents.subscribe((event) => {
+      if (event.detail.type.startsWith("budgets:")) {
+        fetchBudgets();
+      }
+    });
+    return unsubscribe;
+  }, [fetchBudgets]);
 
   const handleSubmitBudget = async (data: BudgetFormData) => {
     try {
@@ -77,6 +84,7 @@ export default function BudgetsPage() {
           rollover: data.rollover || false,
         });
         toast.success("Cập nhật ngân sách thành công!");
+        dataEvents.emit("budgets:updated");
       } else {
         await budgetsAPI.create({
           category_id: data.category,
@@ -88,9 +96,9 @@ export default function BudgetsPage() {
           rollover: data.rollover || false,
         });
         toast.success("Thêm ngân sách thành công!");
+        dataEvents.emit("budgets:created");
       }
       setEditingBudget(null);
-      fetchData();
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Không thể lưu ngân sách";
@@ -103,7 +111,7 @@ export default function BudgetsPage() {
       await budgetsAPI.delete(budgetId);
       toast.success("Xóa ngân sách thành công!");
       setDeleteConfirm({ isOpen: false, budgetId: null, budgetName: "" });
-      fetchData();
+      dataEvents.emit("budgets:deleted");
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Không thể xóa ngân sách";
@@ -119,8 +127,8 @@ export default function BudgetsPage() {
         icon: data.icon,
         color: data.color,
       });
-      await fetchData(); // Reload categories
       toast.success("Tạo danh mục thành công!");
+      dataEvents.emit("categories:created");
     } catch (error: unknown) {
       toast.error(
         error instanceof Error ? error.message : "Không thể tạo danh mục",
@@ -133,7 +141,7 @@ export default function BudgetsPage() {
     try {
       await budgetsAPI.renew(budgetId);
       toast.success("Gia hạn ngân sách thành công!");
-      fetchData();
+      dataEvents.emit("budgets:updated");
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Không thể gia hạn ngân sách";
@@ -270,9 +278,9 @@ export default function BudgetsPage() {
         ) : (
           <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-foreground">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground">
                   Ngân sách của bạn
                 </h2>
                 <p className="text-muted-text mt-1">
@@ -283,7 +291,7 @@ export default function BudgetsPage() {
               </div>
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 cursor-pointer"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center space-x-2 shrink-0"
               >
                 <Plus className="w-5 h-5" />
                 <span>Thêm ngân sách</span>
@@ -301,7 +309,7 @@ export default function BudgetsPage() {
                 </p>
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   <Plus className="w-5 h-5" />
                   Tạo ngân sách đầu tiên
@@ -410,7 +418,7 @@ export default function BudgetsPage() {
                           <div className="flex gap-2 pt-4 mt-4 border-t border-card-border">
                             <button
                               onClick={() => handleEditBudget(budget)}
-                              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors cursor-pointer"
+                              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                             >
                               <Pencil className="w-4 h-4" />
                               Sửa
@@ -424,7 +432,7 @@ export default function BudgetsPage() {
                                     budget.category?.name || "Danh mục",
                                 })
                               }
-                              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer"
+                              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
                               Xóa
@@ -445,7 +453,7 @@ export default function BudgetsPage() {
                     </p>
                     <button
                       onClick={() => setIsModalOpen(true)}
-                      className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                      className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
                       <Plus className="w-4 h-4" />
                       Tạo ngân sách mới
@@ -458,7 +466,7 @@ export default function BudgetsPage() {
                   <div className="space-y-4">
                     <button
                       onClick={() => setShowExpired(!showExpired)}
-                      className="flex items-center gap-2 text-lg font-semibold text-muted-text hover:text-foreground transition-colors cursor-pointer"
+                      className="flex items-center gap-2 text-lg font-semibold text-muted-text hover:text-foreground transition-colors"
                     >
                       <History className="w-5 h-5" />
                       Đã hết hạn ({expiredBudgets.length})
@@ -622,7 +630,7 @@ export default function BudgetsPage() {
                                   onClick={() =>
                                     handleRenewBudget(budget.budget_id)
                                   }
-                                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors cursor-pointer"
+                                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
                                 >
                                   <RefreshCw className="w-4 h-4" />
                                   Gia hạn
@@ -636,7 +644,7 @@ export default function BudgetsPage() {
                                         budget.category?.name || "Danh mục",
                                     })
                                   }
-                                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer"
+                                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                   Xóa

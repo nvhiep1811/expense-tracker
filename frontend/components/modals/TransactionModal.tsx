@@ -114,7 +114,7 @@ export default function TransactionModal({
           if (e.target === e.currentTarget) onClose();
         }}
       >
-        <div className="bg-card-bg rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 border border-card-border">
+        <div className="bg-card-bg rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 mx-4 border border-card-border">
           <div className="flex items-center justify-between mb-6">
             <h2
               id="transaction-modal-title"
@@ -210,7 +210,7 @@ export default function TransactionModal({
                 <button
                   type="button"
                   onClick={() => setIsCategoryModalOpen(true)}
-                  className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-1 cursor-pointer"
+                  className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-1"
                   title="Thêm danh mục mới"
                 >
                   <Plus className="w-4 h-4" />
@@ -237,7 +237,7 @@ export default function TransactionModal({
                   <button
                     type="button"
                     onClick={() => setIsAccountModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
                   >
                     <Plus className="w-4 h-4" />
                     Tạo tài khoản ngay
@@ -245,19 +245,31 @@ export default function TransactionModal({
                 </div>
               ) : (
                 <>
-                  <select
-                    {...register("account")}
-                    className={`w-full px-4 py-2 border ${
-                      errors.account ? "border-red-500" : "border-input-border"
-                    } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
-                  >
-                    <option value="">Chọn tài khoản</option>
-                    {accounts.map((acc) => (
-                      <option key={acc.id} value={acc.id}>
-                        {acc.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex gap-2">
+                    <select
+                      {...register("account")}
+                      className={`flex-1 px-4 py-2 border ${
+                        errors.account
+                          ? "border-red-500"
+                          : "border-input-border"
+                      } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground`}
+                    >
+                      <option value="">Chọn tài khoản</option>
+                      {accounts.map((acc) => (
+                        <option key={acc.id} value={acc.id}>
+                          {acc.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setIsAccountModalOpen(true)}
+                      className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1"
+                      title="Thêm tài khoản mới"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
                   {errors.account && (
                     <p className="mt-1 text-sm text-red-600">
                       {errors.account.message}
