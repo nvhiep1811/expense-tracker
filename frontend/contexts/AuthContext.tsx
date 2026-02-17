@@ -5,6 +5,7 @@ import {
   useContext,
   useState,
   useEffect,
+  useCallback,
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -63,11 +64,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  useEffect(() => {
-    checkAuth();
+  // Background refresh without setting loading state
+  const refreshUserInBackground = useCallback(async () => {
+    try {
+      const profile = await profilesAPI.getMyProfile();
+      if (profile) {
+        const userData = {
+          id: profile.id,
+          name: profile.full_name || "User",
+          email: profile.email || "",
+          avatarUrl: profile.avatar_url || undefined,
+        };
+        saveUserData(userData);
+      }
+    } catch (error) {
+      logger.error("Background refresh failed", error, {
+        context: "refreshUserInBackground",
+      });
+    }
   }, []);
 
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const token = getCookie("access_token");
       if (!token) {
@@ -108,27 +125,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [refreshUserInBackground]); // ← KHÔNG include 'user' để tránh infinite loop
 
-  // Background refresh without setting loading state
-  const refreshUserInBackground = async () => {
-    try {
-      const profile = await profilesAPI.getMyProfile();
-      if (profile) {
-        const userData = {
-          id: profile.id,
-          name: profile.full_name || "User",
-          email: profile.email || "",
-          avatarUrl: profile.avatar_url || undefined,
-        };
-        saveUserData(userData);
-      }
-    } catch (error) {
-      logger.error("Background refresh failed", error, {
-        context: "refreshUserInBackground",
-      });
-    }
-  };
+  // Check auth CHỈ MỘT LẦN khi component mount để tránh spam API
+  useEffect(() => {
+    checkAuth();
+  }, []); // ← Empty deps = chỉ run 1 lần khi mount
 
   const login = async (email: string, password: string) => {
     try {
@@ -138,18 +140,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Save token to cookie only
         setCookie("access_token", response.session.access_token, 7);
 
-        // Fetch user profile from profiles/me
-        const profile = await profilesAPI.getMyProfile();
+        // Use profile from login response (no second API call needed)
+        const profile = response.profile;
 
-        // Set user data from profile
-        const userData = {
-          id: profile.id,
-          name: profile.full_name || "User",
-          email: response.session.user.email || profile.email || "",
-          avatarUrl: profile.avatar_url || undefined,
-        };
+        if (profile) {
+          // Set user data from profile
+          const userData = {
+            id: profile.id,
+            name: profile.full_name || "User",
+            email: response.session.user.email || profile.email || "",
+            avatarUrl: profile.avatar_url || undefined,
+          };
 
-        saveUserData(userData);
+          saveUserData(userData);
+        }
 
         toast.success(response.message || "Đăng nhập thành công!");
         router.push("/dashboard");
@@ -165,11 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (name: string, email: string, password: string) => {
     try {
-      const emailCheck = await authAPI.checkEmail(email);
-      if (emailCheck.exists) {
-        toast.error(emailCheck.message || "Email đã được đăng ký.");
-        return;
-      }
+      // Backend already validates email, no need for pre-check
       const res = await authAPI.register({
         full_name: name,
         email,

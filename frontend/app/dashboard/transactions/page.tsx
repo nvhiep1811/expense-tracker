@@ -1,163 +1,117 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Header from "@/components/layout/Header";
-import { Search, Plus, Loader2 } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import TransactionModal from "@/components/modals/TransactionModal";
 import Pagination from "@/components/ui/Pagination";
+import { TableSkeleton } from "@/components/ui/Skeleton";
 import type { TransactionFormData, AccountFormData } from "@/lib/validations";
 import type { CategoryFormData } from "@/components/modals/CategoryModal";
-import { transactionsAPI, accountsAPI, categoriesAPI } from "@/lib/api";
-import toast from "react-hot-toast";
-import type { Transaction, PaginationMeta } from "@/types";
-import { useDebounce } from "@/hooks/useDebounce";
-import { useCurrency } from "@/hooks/useCurrency";
-import { useData, dataEvents } from "@/contexts/DataContext";
+import type { PaginationMeta } from "@/types";
+import {
+  useDebounce,
+  useCurrency,
+  useAccountsQuery,
+  useCategoriesQuery,
+  useTransactionsQuery,
+  useCreateTransaction,
+  useCreateAccount,
+  useCreateCategory,
+} from "@/hooks";
 
 export default function TransactionsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [pagination, setPagination] = useState<PaginationMeta>({
+
+  // React Query hooks
+  const { data: accounts = [] } = useAccountsQuery();
+  const { data: categories = [] } = useCategoriesQuery();
+  const debouncedSearch = useDebounce(searchQuery, 300);
+  const formatCurrency = useCurrency();
+
+  // Fetch transactions with filters
+  const { data: transactionsData, isLoading } = useTransactionsQuery({
+    type: (filterType || undefined) as
+      | "income"
+      | "expense"
+      | "transfer"
+      | undefined,
+    search: debouncedSearch || undefined,
+    page,
+    limit,
+  });
+
+  const transactions = transactionsData?.data ?? [];
+  const pagination: PaginationMeta = transactionsData?.meta ?? {
     page: 1,
     limit: 20,
     total: 0,
     totalPages: 0,
-  });
+  };
 
-  // Use global data context for accounts and categories
-  const { accounts, categories, getAccountById, getCategoryById } = useData();
-
-  // Debounce search query
-  const debouncedSearch = useDebounce(searchQuery, 300);
-  const formatCurrency = useCurrency();
-
-  const fetchTransactions = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await transactionsAPI.getAll({
-        type: (filterType || undefined) as
-          | "income"
-          | "expense"
-          | "transfer"
-          | undefined,
-        search: debouncedSearch || undefined,
-        page,
-        limit,
-      });
-      setTransactions(response.data);
-      setPagination(response.meta);
-    } catch (error: unknown) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Không thể tải dữ liệu giao dịch",
-      );
-    } finally {
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, filterType]);
-
-  useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
+  // Mutations
+  const createTransactionMutation = useCreateTransaction();
+  const createAccountMutation = useCreateAccount();
+  const createCategoryMutation = useCreateCategory();
 
   // Reset to page 1 when search changes
   useEffect(() => {
     if (page !== 1) {
       setPage(1);
-    } else {
-      fetchTransactions();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
 
-  // Listen for transaction data changes
-  useEffect(() => {
-    const unsubscribe = dataEvents.subscribe((event) => {
-      if (event.detail.type.startsWith("transactions:")) {
-        fetchTransactions();
-      }
-    });
-    return unsubscribe;
-  }, [fetchTransactions]);
-
   const getAccountName = useMemo(
     () => (accountId: string) => {
-      const account = getAccountById(accountId);
+      const account = accounts.find((a) => a.id === accountId);
       return account?.name || "N/A";
     },
-    [getAccountById],
+    [accounts],
   );
 
   const getCategoryName = useMemo(
     () => (categoryId?: string) => {
       if (!categoryId) return "Không danh mục";
-      const category = getCategoryById(categoryId);
+      const category = categories.find((c) => c.id === categoryId);
       return category?.name || "N/A";
     },
-    [getCategoryById],
+    [categories],
   );
 
   const handleAddTransaction = async (data: TransactionFormData) => {
-    try {
-      await transactionsAPI.create({
-        type: data.type,
-        amount: data.amount,
-        account_id: data.account,
-        category_id: data.category,
-        occurred_on: data.date,
-        description: data.description,
-      });
-      toast.success("Thêm giao dịch thành công!");
-      dataEvents.emit("transactions:created");
-    } catch (error: unknown) {
-      toast.error(
-        error instanceof Error ? error.message : "Không thể thêm giao dịch",
-      );
-    }
+    await createTransactionMutation.mutateAsync({
+      type: data.type,
+      amount: data.amount,
+      account_id: data.account,
+      category_id: data.category,
+      occurred_on: data.date,
+      description: data.description,
+    });
+    setIsModalOpen(false);
   };
 
   const handleCategoryCreated = async (data: CategoryFormData) => {
-    try {
-      await categoriesAPI.create({
-        name: data.name,
-        side: data.side,
-        icon: data.icon,
-        color: data.color,
-      });
-      toast.success("Tạo danh mục thành công!");
-      dataEvents.emit("categories:created");
-    } catch (error: unknown) {
-      toast.error(
-        error instanceof Error ? error.message : "Không thể tạo danh mục",
-      );
-      throw error; // Re-throw to keep modal open
-    }
+    await createCategoryMutation.mutateAsync({
+      name: data.name,
+      side: data.side,
+      icon: data.icon,
+      color: data.color,
+    });
   };
 
   const handleAccountCreated = async (data: AccountFormData) => {
-    try {
-      await accountsAPI.create({
-        name: data.name,
-        type: data.type,
-        opening_balance: data.balance,
-        color: data.color,
-      });
-      toast.success("Tạo tài khoản thành công!");
-      dataEvents.emit("accounts:created");
-    } catch (error: unknown) {
-      toast.error(
-        error instanceof Error ? error.message : "Không thể tạo tài khoản",
-      );
-      throw error; // Re-throw to keep modal open
-    }
+    await createAccountMutation.mutateAsync({
+      name: data.name,
+      type: data.type,
+      opening_balance: data.balance,
+      color: data.color,
+    });
   };
 
   return (
@@ -206,12 +160,8 @@ export default function TransactionsPage() {
           </div>
 
           {/* Transactions Table */}
-          {loading ? (
-            <div className="bg-card-bg rounded-xl border border-card-border">
-              <div className="flex items-center justify-center h-64">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-              </div>
-            </div>
+          {isLoading ? (
+            <TableSkeleton rows={10} />
           ) : (
             <div className="bg-card-bg rounded-xl border border-card-border overflow-hidden">
               {transactions.length === 0 ? (

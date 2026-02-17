@@ -3,11 +3,16 @@
 import { useState, useEffect } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import type { Theme } from "@/contexts/ThemeContext";
-import { profilesAPI } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  useProfileQuery,
+  useUpdateProfile,
+  useChangeEmail,
+  useChangePassword,
+} from "@/hooks";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import toast from "react-hot-toast";
 import Header from "@/components/layout/Header";
 import {
   User,
@@ -58,22 +63,18 @@ type EmailFormData = z.infer<typeof emailSettingsSchema>;
 type PasswordFormData = z.infer<typeof passwordSettingsSchema>;
 type PreferencesFormData = z.infer<typeof preferencesSchema>;
 
-interface Profile {
-  id: string;
-  email?: string;
-  full_name?: string;
-  avatar_url?: string;
-  default_currency: string;
-  timezone: string;
-  month_start_day: number;
-  created_at: string;
-  updated_at: string;
-}
-
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { refreshUser } = useAuth();
+
+  // Use React Query to fetch profile (cached, auto deduped)
+  const { data: profile, isLoading } = useProfileQuery();
+
+  // Mutations
+  const updateProfileMutation = useUpdateProfile();
+  const changeEmailMutation = useChangeEmail();
+  const changePasswordMutation = useChangePassword();
+
   const [activeTab, setActiveTab] = useState<
     "profile" | "security" | "preferences" | "notifications" | "data"
   >("profile");
@@ -121,76 +122,43 @@ export default function SettingsPage() {
     resolver: zodResolver(preferencesSchema),
   });
 
+  // Set form values khi profile data load xong
   useEffect(() => {
-    fetchProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const fetchProfile = async () => {
-    try {
-      setLoading(true);
-      const data = await profilesAPI.getMyProfile();
-      setProfile(data);
-      setProfileValue("full_name", data.full_name || "");
-      setPreferencesValue("default_currency", data.default_currency || "VND");
-      setPreferencesValue("timezone", data.timezone || "Asia/Ho_Chi_Minh");
-      setPreferencesValue("month_start_day", data.month_start_day || 1);
-    } catch {
-      toast.error("Không thể tải thông tin cài đặt");
-    } finally {
-      setLoading(false);
+    if (profile) {
+      setProfileValue("full_name", profile.full_name || "");
+      setPreferencesValue(
+        "default_currency",
+        profile.default_currency || "VND",
+      );
+      setPreferencesValue("timezone", profile.timezone || "Asia/Ho_Chi_Minh");
+      setPreferencesValue("month_start_day", profile.month_start_day || 1);
     }
-  };
+  }, [profile, setProfileValue, setPreferencesValue]);
 
   const onUpdateProfile = async (data: ProfileFormData) => {
-    try {
-      await profilesAPI.updateMyProfile({ full_name: data.full_name });
-      toast.success("Cập nhật thông tin thành công!");
-      fetchProfile();
-    } catch {
-      toast.error("Không thể cập nhật thông tin");
-    }
+    await updateProfileMutation.mutateAsync({ full_name: data.full_name });
+    await refreshUser(); // Update header display
   };
 
   const onChangeEmail = async (data: EmailFormData) => {
-    try {
-      await profilesAPI.changeEmail(data.new_email);
-      toast.success(
-        "Yêu cầu thay đổi email đã được gửi. Vui lòng kiểm tra hộp thư!",
-      );
-      resetEmail();
-    } catch {
-      toast.error("Không thể thay đổi email");
-    }
+    await changeEmailMutation.mutateAsync(data.new_email);
+    resetEmail();
   };
 
   const onChangePassword = async (data: PasswordFormData) => {
-    try {
-      await profilesAPI.changePassword(
-        data.current_password,
-        data.new_password,
-      );
-      toast.success("Mật khẩu đã được thay đổi thành công!");
-      resetPassword();
-    } catch {
-      toast.error(
-        "Không thể thay đổi mật khẩu. Vui lòng kiểm tra mật khẩu hiện tại.",
-      );
-    }
+    await changePasswordMutation.mutateAsync({
+      currentPassword: data.current_password,
+      newPassword: data.new_password,
+    });
+    resetPassword();
   };
 
   const onUpdatePreferences = async (data: PreferencesFormData) => {
-    try {
-      await profilesAPI.updateMyProfile({
-        default_currency: data.default_currency,
-        timezone: data.timezone,
-        month_start_day: data.month_start_day,
-      });
-      toast.success("Cập nhật tùy chọn thành công!");
-      fetchProfile();
-    } catch {
-      toast.error("Không thể cập nhật tùy chọn");
-    }
+    await updateProfileMutation.mutateAsync({
+      default_currency: data.default_currency,
+      timezone: data.timezone,
+      month_start_day: data.month_start_day,
+    });
   };
 
   const tabs = [
@@ -226,7 +194,7 @@ export default function SettingsPage() {
     { value: "system", label: "Hệ thống", icon: Monitor },
   ];
 
-  if (loading) {
+  if (isLoading) {
     return (
       <>
         <Header title="Cài đặt" subtitle="Quản lý cài đặt tài khoản của bạn" />

@@ -24,11 +24,17 @@ import { DashboardModule } from './dashboard/dashboard.module';
       ttl: 300, // 5 minutes default TTL (in seconds)
       max: 100, // Maximum number of items in cache
     }),
-    // Rate limiting: 10 requests per 60 seconds per IP
+    // Rate limiting: Different limits for different routes
     ThrottlerModule.forRoot([
       {
+        name: 'default',
         ttl: 60000, // 60 seconds
-        limit: 10, // 10 requests
+        limit: 100, // 100 requests per minute (general)
+      },
+      {
+        name: 'auth',
+        ttl: 60000,
+        limit: 5, // 5 auth requests per minute (stricter for login/register)
       },
     ]),
     CommonModule,

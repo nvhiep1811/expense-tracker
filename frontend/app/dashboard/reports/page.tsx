@@ -15,33 +15,22 @@ import {
 const ReportsCharts = lazy(
   () => import("@/components/dashboard/ReportsCharts"),
 );
-import {
-  transactionsAPI,
-  categoriesAPI,
-  accountsAPI,
-  dashboardAPI,
-} from "@/lib/api";
+import { transactionsAPI } from "@/lib/api";
+import { useCategoriesQuery, useAccountsQuery } from "@/hooks";
 import toast from "react-hot-toast";
-import type { Transaction, Category, Account } from "@/types";
-import type { DashboardStats } from "@/types/dashboard";
+import type { Transaction } from "@/types";
 import { useCurrency } from "@/hooks/useCurrency";
-
-interface ReportData {
-  transactions: Transaction[];
-  categories: Category[];
-  accounts: Account[];
-  dashboardStats: DashboardStats | null;
-}
 
 export default function ReportsPage() {
   const formatCurrency = useCurrency();
-  const [loading, setLoading] = useState(true);
-  const [reportData, setReportData] = useState<ReportData>({
-    transactions: [],
-    categories: [],
-    accounts: [],
-    dashboardStats: null,
-  });
+
+  // Use React Query for static data (cached, no need to refetch on date change)
+  const { data: categories = [] } = useCategoriesQuery();
+  const { data: accounts = [] } = useAccountsQuery();
+
+  // Local state for transactions (needs custom pagination logic)
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(true);
 
   // Date filters
   const [dateRange, setDateRange] = useState<{
@@ -61,21 +50,15 @@ export default function ReportsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [exporting, setExporting] = useState(false);
 
+  // Fetch transactions khi dateRange thay đổi
   useEffect(() => {
-    fetchReportData();
+    fetchTransactions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange]);
 
-  const fetchReportData = async () => {
+  const fetchTransactions = async () => {
     try {
-      setLoading(true);
-
-      // Fetch all data except transactions first
-      const [categoriesData, accountsData, statsData] = await Promise.all([
-        categoriesAPI.getAll(),
-        accountsAPI.getAll(),
-        dashboardAPI.getStats(),
-      ]);
+      setLoadingTransactions(true);
 
       // Fetch transactions with pagination (max 100 per request)
       let allTransactions: Transaction[] = [];
@@ -87,7 +70,7 @@ export default function ReportsPage() {
           start_date: dateRange.start,
           end_date: dateRange.end,
           page: currentPage,
-          limit: 100, // Max allowed by backend
+          limit: 100,
         });
 
         allTransactions = [...allTransactions, ...transactionsRes.data];
@@ -104,27 +87,20 @@ export default function ReportsPage() {
         }
       }
 
-      setReportData({
-        transactions: allTransactions,
-        categories: categoriesData,
-        accounts: accountsData,
-        dashboardStats: statsData,
-      });
+      setTransactions(allTransactions);
     } catch (error: unknown) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Không thể tải dữ liệu báo cáo",
+          : "Không thể tải dữ liệu giao dịch",
       );
     } finally {
-      setLoading(false);
+      setLoadingTransactions(false);
     }
   };
 
   // Calculate summary statistics
   const statistics = useMemo(() => {
-    const { transactions } = reportData;
-
     const income = transactions
       .filter((t) => t.type === "income")
       .reduce((sum, t) => sum + t.amount, 0);
@@ -144,11 +120,10 @@ export default function ReportsPage() {
       net: income - expense,
       transactionCount: transactions.length,
     };
-  }, [reportData]);
+  }, [transactions]);
 
   // Income vs Expense by Day
   const dailyData = useMemo(() => {
-    const { transactions } = reportData;
     const dailyMap = new Map<
       string,
       { income: number; expense: number; date: string }
@@ -178,11 +153,10 @@ export default function ReportsPage() {
         expense: d.expense,
         net: d.income - d.expense,
       }));
-  }, [reportData]);
+  }, [transactions]);
 
   // Category breakdown (Pie chart)
   const categoryData = useMemo(() => {
-    const { transactions, categories } = reportData;
     const categoryMap = new Map<string, { name: string; value: number }>();
 
     transactions
@@ -204,11 +178,10 @@ export default function ReportsPage() {
     return Array.from(categoryMap.values())
       .sort((a, b) => b.value - a.value)
       .slice(0, 8);
-  }, [reportData]);
+  }, [transactions, categories]);
 
   // Income categories
   const incomeCategoryData = useMemo(() => {
-    const { transactions, categories } = reportData;
     const categoryMap = new Map<string, { name: string; value: number }>();
 
     transactions
@@ -230,28 +203,26 @@ export default function ReportsPage() {
     return Array.from(categoryMap.values())
       .sort((a, b) => b.value - a.value)
       .slice(0, 8);
-  }, [reportData]);
+  }, [transactions, categories]);
 
   // Account balances
   const accountBalances = useMemo(() => {
-    return reportData.accounts
+    return accounts
       .filter((a) => !a.is_archived)
       .map((a) => ({
         name: a.name,
         balance: a.current_balance,
       }))
       .sort((a, b) => b.balance - a.balance);
-  }, [reportData]);
+  }, [accounts]);
 
   // Top transactions
   const topTransactions = useMemo(() => {
-    return [...reportData.transactions]
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 5);
-  }, [reportData]);
+    return [...transactions].sort((a, b) => b.amount - a.amount).slice(0, 10);
+  }, [transactions]);
 
   const handleExport = async () => {
-    if (reportData.transactions.length === 0) {
+    if (transactions.length === 0) {
       toast.error("Không có dữ liệu để xuất");
       return;
     }
@@ -343,7 +314,7 @@ export default function ReportsPage() {
       rows.push(headers.map(escapeCsvValue).join(","));
 
       // Data rows
-      reportData.transactions
+      transactions
         .sort(
           (a, b) =>
             new Date(b.occurred_on).getTime() -
@@ -353,9 +324,8 @@ export default function ReportsPage() {
           const row = [
             new Date(t.occurred_on).toLocaleDateString("vi-VN"),
             translateType(t.type),
-            reportData.categories.find((c) => c.id === t.category_id)?.name ||
-              "Không có",
-            reportData.accounts.find((a) => a.id === t.account_id)?.name ||
+            categories.find((c) => c.id === t.category_id)?.name || "Không có",
+            accounts.find((a) => a.id === t.account_id)?.name ||
               "Không xác định",
             t.amount.toLocaleString("vi-VN"),
             t.description || "",
@@ -387,14 +357,13 @@ export default function ReportsPage() {
 
       toast.success(`Đã xuất báo cáo ${statistics.transactionCount} giao dịch`);
     } catch (error) {
-      console.error("Export error:", error);
       toast.error("Có lỗi khi xuất báo cáo");
     } finally {
       setExporting(false);
     }
   };
 
-  if (loading) {
+  if (loadingTransactions) {
     return (
       <>
         <Header title="Báo cáo" subtitle="Đang tải dữ liệu..." />
@@ -456,12 +425,12 @@ export default function ReportsPage() {
 
               <button
                 onClick={handleExport}
-                disabled={exporting || reportData.transactions.length === 0}
+                disabled={exporting || transactions.length === 0}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
                 title={
-                  reportData.transactions.length === 0
+                  transactions.length === 0
                     ? "Không có dữ liệu để xuất"
-                    : `Xuất ${reportData.transactions.length} giao dịch`
+                    : `Xuất ${transactions.length} giao dịch`
                 }
               >
                 <Download
@@ -469,7 +438,7 @@ export default function ReportsPage() {
                 />
                 {exporting
                   ? "Đang xuất..."
-                  : `Xuất báo cáo (${reportData.transactions.length})`}
+                  : `Xuất báo cáo (${transactions.length})`}
               </button>
             </div>
           </div>
@@ -573,10 +542,10 @@ export default function ReportsPage() {
             </h3>
             <div className="space-y-3">
               {topTransactions.map((transaction) => {
-                const category = reportData.categories.find(
+                const category = categories.find(
                   (c) => c.id === transaction.category_id,
                 );
-                const account = reportData.accounts.find(
+                const account = accounts.find(
                   (a) => a.id === transaction.account_id,
                 );
 

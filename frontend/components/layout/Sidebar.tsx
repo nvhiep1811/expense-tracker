@@ -15,35 +15,53 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
+import { PrefetchLink } from "@/components/ui/PrefetchLink";
+
+type PrefetchTarget =
+  | "accounts"
+  | "categories"
+  | "transactions"
+  | "budgets"
+  | "dashboard";
 
 export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const { theme, setTheme, resolvedTheme } = useTheme();
 
-  const menuItems = [
+  const menuItems: {
+    id: string;
+    label: string;
+    icon: typeof TrendingUp;
+    href: string;
+    prefetch?: PrefetchTarget;
+  }[] = [
     {
       id: "dashboard",
       label: "Tổng quan",
       icon: TrendingUp,
       href: "/dashboard",
+      prefetch: "dashboard",
     },
     {
       id: "transactions",
       label: "Giao dịch",
       icon: CreditCard,
       href: "/dashboard/transactions",
+      prefetch: "transactions",
     },
     {
       id: "budgets",
       label: "Ngân sách",
       icon: Target,
       href: "/dashboard/budgets",
+      prefetch: "budgets",
     },
     {
       id: "accounts",
       label: "Tài khoản",
       icon: Wallet,
       href: "/dashboard/accounts",
+      prefetch: "accounts",
     },
     {
       id: "reports",
@@ -84,9 +102,10 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
           const isActive = pathname === item.href;
 
           return (
-            <Link
+            <PrefetchLink
               key={item.id}
               href={item.href}
+              prefetchData={item.prefetch}
               onClick={onClose}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                 isActive
@@ -96,7 +115,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
             >
               <Icon className="w-5 h-5" />
               <span className="font-medium">{item.label}</span>
-            </Link>
+            </PrefetchLink>
           );
         })}
       </nav>

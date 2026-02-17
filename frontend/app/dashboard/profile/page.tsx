@@ -1,8 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { profilesAPI } from "@/lib/api";
+import {
+  useProfileQuery,
+  useUpdateProfile,
+  useChangeEmail,
+  useChangePassword,
+  useUploadAvatar,
+} from "@/hooks";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -16,21 +22,18 @@ import {
 import toast from "react-hot-toast";
 import { User, Mail, Lock, Camera, Loader2 } from "lucide-react";
 
-interface Profile {
-  id: string;
-  email?: string;
-  full_name?: string;
-  avatar_url?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export default function ProfilePage() {
-  const { user, refreshUser, isLoading: authLoading } = useAuth();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
+  const { user, refreshUser } = useAuth();
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  // Use React Query to fetch profile (cached, auto deduped)
+  const { data: profile, isLoading } = useProfileQuery();
+
+  // Mutations
+  const updateProfileMutation = useUpdateProfile();
+  const changeEmailMutation = useChangeEmail();
+  const changePasswordMutation = useChangePassword();
+  const uploadAvatarMutation = useUploadAvatar();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -65,75 +68,31 @@ export default function ProfilePage() {
     resolver: zodResolver(changePasswordSchema),
   });
 
-  const fetchProfile = useCallback(async () => {
-    try {
-      const data = await profilesAPI.getMyProfile();
-      setProfile(data);
-      setProfileValue("full_name", data.full_name || "");
-      setEmailValue("new_email", data.email || user?.email || "");
-      setAvatarPreview(data.avatar_url || null);
-    } catch {
-      toast.error("Không thể tải thông tin profile.");
-    } finally {
-      setLoading(false);
-    }
-  }, [setProfileValue, setEmailValue, user?.email]);
-
+  // Set form values khi profile data load xong
   useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+    if (profile) {
+      setProfileValue("full_name", profile.full_name || "");
+      setEmailValue("new_email", profile.email || user?.email || "");
+      setAvatarPreview(profile.avatar_url || null);
+    }
+  }, [profile, setProfileValue, setEmailValue, user?.email]);
 
   const onSubmitProfile = async (data: UpdateProfileFormData) => {
-    setUpdating(true);
-    try {
-      const updatedProfile = await profilesAPI.updateMyProfile({
-        full_name: data.full_name,
-      });
-      setProfile(updatedProfile);
-      await refreshUser();
-      toast.success("Cập nhật thông tin thành công!");
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Không thể cập nhật thông tin.";
-      toast.error(message);
-    } finally {
-      setUpdating(false);
-    }
+    await updateProfileMutation.mutateAsync({ full_name: data.full_name });
+    await refreshUser(); // Update header display
   };
 
   const onSubmitEmail = async (data: ChangeEmailFormData) => {
-    setUpdating(true);
-    try {
-      const response = await profilesAPI.changeEmail(data.new_email);
-      toast.success(response.message);
-      resetEmail();
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Không thể thay đổi email.";
-      toast.error(message);
-    } finally {
-      setUpdating(false);
-    }
+    await changeEmailMutation.mutateAsync(data.new_email);
+    resetEmail();
   };
 
   const onSubmitPassword = async (data: ChangePasswordFormData) => {
-    setUpdating(true);
-    try {
-      const response = await profilesAPI.changePassword(
-        data.current_password,
-        data.new_password,
-      );
-      toast.success(response.message);
-      resetPassword();
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Không thể thay đổi mật khẩu.";
-      toast.error(message);
-    } finally {
-      setUpdating(false);
-    }
+    await changePasswordMutation.mutateAsync({
+      currentPassword: data.current_password,
+      newPassword: data.new_password,
+    });
+    resetPassword();
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,33 +114,23 @@ export default function ProfilePage() {
       const base64String = reader.result as string;
       setAvatarPreview(base64String);
 
-      setUpdating(true);
       try {
-        const response = await profilesAPI.uploadAvatar(
-          file.name,
-          file.type,
-          base64String,
-        );
-
-        setProfile((prev) =>
-          prev ? { ...prev, avatar_url: response.avatar_url } : null,
-        );
+        await uploadAvatarMutation.mutateAsync({
+          fileName: file.name,
+          fileType: file.type,
+          base64Data: base64String,
+        });
         await refreshUser();
-        toast.success("Cập nhật avatar thành công!");
-      } catch (error: unknown) {
-        const message =
-          error instanceof Error ? error.message : "Không thể tải lên avatar.";
-        toast.error(message);
+      } catch {
+        // Reset preview on error
         setAvatarPreview(profile?.avatar_url || null);
-      } finally {
-        setUpdating(false);
       }
     };
     reader.readAsDataURL(file);
   };
 
   // Wait for both auth and profile to load
-  if (loading || authLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -211,10 +160,10 @@ export default function ProfilePage() {
             )}
             <button
               onClick={() => fileInputRef.current?.click()}
-              disabled={updating}
+              disabled={uploadAvatarMutation.isPending}
               className="absolute bottom-0 right-0 p-1.5 sm:p-2 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg disabled:bg-gray-400 transition-colors disabled:cursor-not-allowed"
             >
-              {updating ? (
+              {uploadAvatarMutation.isPending ? (
                 <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
               ) : (
                 <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -276,10 +225,10 @@ export default function ProfilePage() {
             </div>
             <button
               type="submit"
-              disabled={updating}
+              disabled={updateProfileMutation.isPending}
               className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-400 dark:disabled:from-gray-600 dark:disabled:to-gray-600 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
             >
-              {updating ? (
+              {updateProfileMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Đang cập nhật...
@@ -327,10 +276,10 @@ export default function ProfilePage() {
             </div>
             <button
               type="submit"
-              disabled={updating}
+              disabled={changeEmailMutation.isPending}
               className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 disabled:from-gray-400 disabled:to-gray-400 dark:disabled:from-gray-600 dark:disabled:to-gray-600 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
             >
-              {updating ? (
+              {changeEmailMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Đang gửi...
@@ -416,10 +365,10 @@ export default function ProfilePage() {
             <div className="lg:col-span-3">
               <button
                 type="submit"
-                disabled={updating}
+                disabled={changePasswordMutation.isPending}
                 className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 disabled:from-gray-400 disabled:to-gray-400 dark:disabled:from-gray-600 dark:disabled:to-gray-600 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
               >
-                {updating ? (
+                {changePasswordMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Đang cập nhật...

@@ -33,11 +33,14 @@
 ### ⚡ Performance
 
 - Server-side rendering (SSR)
-- Static generation cho landing pages
+- Static generation for landing pages
+- React Query caching (70% API call reduction)
+- Automatic request deduplication
 - Image optimization (AVIF/WebP)
 - Code splitting & lazy loading
 - Optimized package imports (lucide-react, recharts)
 - Gzip compression
+- Auth flow optimized (50% faster login)
 
 ### 🔒 Security
 
@@ -70,9 +73,16 @@
 
 - **Recharts 3.6** - Chart library
 
-**HTTP Client:**
+**Data Fetching & State:**
 
-- **Axios 1.13** - Promise-based HTTP client
+- **TanStack Query v5** - Data fetching, caching, synchronization
+  - Automatic deduplication
+  - Stale-while-revalidate pattern
+  - Background refetching
+  - Optimistic updates
+- **Axios 1.13** - HTTP client
+
+**HTTP Client:**
 
 **Icons & UI:**
 

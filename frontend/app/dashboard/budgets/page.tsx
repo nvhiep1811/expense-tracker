@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import Header from "@/components/layout/Header";
 import {
   Target,
   Plus,
-  Loader2,
   AlertTriangle,
   ChevronDown,
   ChevronUp,
@@ -17,18 +16,23 @@ import {
 } from "lucide-react";
 import BudgetModal from "@/components/modals/BudgetModal";
 import ConfirmModal from "@/components/modals/ConfirmModal";
+import { BudgetsPageSkeleton } from "@/components/ui/Skeleton";
 import type { BudgetFormData } from "@/lib/validations";
 import type { CategoryFormData } from "@/components/modals/CategoryModal";
-import { budgetsAPI, categoriesAPI } from "@/lib/api";
-import toast from "react-hot-toast";
 import type { BudgetStatus } from "@/types";
-import { useCurrency } from "@/hooks/useCurrency";
-import { useCategories, dataEvents } from "@/contexts/DataContext";
+import {
+  useCurrency,
+  useCategoriesQuery,
+  useBudgetStatusQuery,
+  useCreateBudget,
+  useUpdateBudget,
+  useDeleteBudget,
+  useRenewBudget,
+  useCreateCategory,
+} from "@/hooks";
 
 export default function BudgetsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [budgets, setBudgets] = useState<BudgetStatus[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showExpired, setShowExpired] = useState(false);
   const [editingBudget, setEditingBudget] = useState<BudgetStatus | null>(null);
   const [filterMonth, setFilterMonth] = useState<number | null>(null);
@@ -40,113 +44,61 @@ export default function BudgetsPage() {
   }>({ isOpen: false, budgetId: null, budgetName: "" });
   const formatCurrency = useCurrency();
 
-  // Use global categories from DataContext
-  const { categories } = useCategories();
+  // React Query hooks
+  const { data: categories = [] } = useCategoriesQuery();
+  const { data: budgets = [], isLoading } = useBudgetStatusQuery();
+  const createBudgetMutation = useCreateBudget();
+  const updateBudgetMutation = useUpdateBudget();
+  const deleteBudgetMutation = useDeleteBudget();
+  const renewBudgetMutation = useRenewBudget();
+  const createCategoryMutation = useCreateCategory();
 
-  const fetchBudgets = useCallback(async () => {
-    try {
-      setLoading(true);
-      const budgetsData = await budgetsAPI.getStatus();
-      setBudgets(budgetsData);
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Không thể tải dữ liệu";
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const handleSubmitBudget = (data: BudgetFormData) => {
+    const budgetData = {
+      category_id: data.category,
+      period: data.period,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      limit_amount: data.amount,
+      alert_threshold_pct: data.alert_threshold || 80,
+      rollover: data.rollover || false,
+    };
 
-  useEffect(() => {
-    fetchBudgets();
-  }, [fetchBudgets]);
-
-  // Listen for budget data changes
-  useEffect(() => {
-    const unsubscribe = dataEvents.subscribe((event) => {
-      if (event.detail.type.startsWith("budgets:")) {
-        fetchBudgets();
-      }
-    });
-    return unsubscribe;
-  }, [fetchBudgets]);
-
-  const handleSubmitBudget = async (data: BudgetFormData) => {
-    try {
-      if (editingBudget) {
-        await budgetsAPI.update(editingBudget.budget_id, {
-          category_id: data.category,
-          period: data.period,
-          start_date: data.start_date,
-          end_date: data.end_date,
-          limit_amount: data.amount,
-          alert_threshold_pct: data.alert_threshold || 80,
-          rollover: data.rollover || false,
-        });
-        toast.success("Cập nhật ngân sách thành công!");
-        dataEvents.emit("budgets:updated");
-      } else {
-        await budgetsAPI.create({
-          category_id: data.category,
-          period: data.period,
-          start_date: data.start_date,
-          end_date: data.end_date,
-          limit_amount: data.amount,
-          alert_threshold_pct: data.alert_threshold || 80,
-          rollover: data.rollover || false,
-        });
-        toast.success("Thêm ngân sách thành công!");
-        dataEvents.emit("budgets:created");
-      }
-      setEditingBudget(null);
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Không thể lưu ngân sách";
-      toast.error(errorMessage);
+    if (editingBudget) {
+      updateBudgetMutation.mutate(
+        { id: editingBudget.budget_id, data: budgetData },
+        {
+          onSuccess: () => {
+            setEditingBudget(null);
+            setIsModalOpen(false);
+          },
+        },
+      );
+    } else {
+      createBudgetMutation.mutate(budgetData, {
+        onSuccess: () => setIsModalOpen(false),
+      });
     }
   };
 
-  const handleDeleteBudget = async (budgetId: string) => {
-    try {
-      await budgetsAPI.delete(budgetId);
-      toast.success("Xóa ngân sách thành công!");
-      setDeleteConfirm({ isOpen: false, budgetId: null, budgetName: "" });
-      dataEvents.emit("budgets:deleted");
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Không thể xóa ngân sách";
-      toast.error(errorMessage);
-    }
+  const handleDeleteBudget = (budgetId: string) => {
+    deleteBudgetMutation.mutate(budgetId, {
+      onSuccess: () =>
+        setDeleteConfirm({ isOpen: false, budgetId: null, budgetName: "" }),
+    });
   };
 
   const handleCategoryCreated = async (data: CategoryFormData) => {
-    try {
-      await categoriesAPI.create({
-        name: data.name,
-        side: data.side,
-        icon: data.icon,
-        color: data.color,
-      });
-      toast.success("Tạo danh mục thành công!");
-      dataEvents.emit("categories:created");
-    } catch (error: unknown) {
-      toast.error(
-        error instanceof Error ? error.message : "Không thể tạo danh mục",
-      );
-      throw error; // Re-throw to keep modal open
-    }
+    await createCategoryMutation.mutateAsync({
+      name: data.name,
+      side: data.side,
+      icon: data.icon,
+      color: data.color,
+    });
   };
 
-  const handleRenewBudget = async (budgetId: string) => {
-    try {
-      await budgetsAPI.renew(budgetId);
-      toast.success("Gia hạn ngân sách thành công!");
-      dataEvents.emit("budgets:updated");
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Không thể gia hạn ngân sách";
-      toast.error(errorMessage);
-    }
+  const handleRenewBudget = (budgetId: string) => {
+    renewBudgetMutation.mutate(budgetId);
   };
 
   const handleEditBudget = (budget: BudgetStatus) => {
@@ -271,10 +223,8 @@ export default function BudgetsPage() {
       <Header title="Ngân sách" subtitle="Quản lý ngân sách của bạn" />
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          </div>
+        {isLoading ? (
+          <BudgetsPageSkeleton />
         ) : (
           <div className="space-y-6">
             {/* Header */}

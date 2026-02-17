@@ -1,9 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Bell, Check, EyeOff, AlertTriangle, X, Loader2 } from "lucide-react";
-import { alertsAPI, Alert } from "@/lib/api";
-import { useCurrency } from "@/hooks/useCurrency";
+import { Alert } from "@/lib/api";
+import {
+  useCurrency,
+  useAlertsQuery,
+  useUnreadAlertCountQuery,
+  useMarkAlertAsRead,
+  useMarkAllAlertsAsRead,
+  useDismissAlert,
+  useDismissAllAlerts,
+} from "@/hooks";
 
 // Format time distance in Vietnamese
 function formatTimeAgo(dateString: string): string {
@@ -30,11 +38,22 @@ function formatTimeAgo(dateString: string): string {
 
 export default function AlertsDropdown() {
   const [isOpen, setIsOpen] = useState(false);
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const formatCurrency = useCurrency();
+
+  // React Query hooks
+  const { data: unreadCount = 0 } = useUnreadAlertCountQuery();
+  const {
+    data: alerts = [],
+    isLoading: loading,
+    refetch: fetchAlerts,
+  } = useAlertsQuery({ limit: 20 });
+
+  // Mutations
+  const markAsReadMutation = useMarkAlertAsRead();
+  const markAllAsReadMutation = useMarkAllAlertsAsRead();
+  const dismissMutation = useDismissAlert();
+  const dismissAllMutation = useDismissAllAlerts();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -51,36 +70,6 @@ export default function AlertsDropdown() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fetch unread count periodically
-  const fetchUnreadCount = useCallback(async () => {
-    try {
-      const count = await alertsAPI.getUnreadCount();
-      setUnreadCount(count);
-    } catch {
-      // Silently fail - not critical
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchUnreadCount();
-    // Poll every 60 seconds
-    const interval = setInterval(fetchUnreadCount, 60000);
-    return () => clearInterval(interval);
-  }, [fetchUnreadCount]);
-
-  // Fetch alerts when dropdown opens
-  const fetchAlerts = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await alertsAPI.getAll({ limit: 20 });
-      setAlerts(data);
-    } catch {
-      // Silently fail
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   const handleToggle = () => {
     const newIsOpen = !isOpen;
     setIsOpen(newIsOpen);
@@ -89,49 +78,20 @@ export default function AlertsDropdown() {
     }
   };
 
-  const handleMarkAsRead = async (alertId: string) => {
-    try {
-      await alertsAPI.markAsRead(alertId);
-      setAlerts((prev) =>
-        prev.map((a) => (a.id === alertId ? { ...a, is_read: true } : a)),
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
-    } catch {
-      // Silently fail
-    }
+  const handleMarkAsRead = (alertId: string) => {
+    markAsReadMutation.mutate(alertId);
   };
 
-  const handleMarkAllAsRead = async () => {
-    try {
-      await alertsAPI.markAllAsRead();
-      setAlerts((prev) => prev.map((a) => ({ ...a, is_read: true })));
-      setUnreadCount(0);
-    } catch {
-      // Silently fail
-    }
+  const handleMarkAllAsRead = () => {
+    markAllAsReadMutation.mutate();
   };
 
-  const handleDismiss = async (alertId: string) => {
-    try {
-      const alertToDismiss = alerts.find((a) => a.id === alertId);
-      await alertsAPI.dismiss(alertId);
-      setAlerts((prev) => prev.filter((a) => a.id !== alertId));
-      if (alertToDismiss && !alertToDismiss.is_read) {
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-      }
-    } catch {
-      // Silently fail
-    }
+  const handleDismiss = (alertId: string) => {
+    dismissMutation.mutate(alertId);
   };
 
-  const handleDismissAll = async () => {
-    try {
-      await alertsAPI.dismissAll();
-      setAlerts([]);
-      setUnreadCount(0);
-    } catch {
-      // Silently fail
-    }
+  const handleDismissAll = () => {
+    dismissAllMutation.mutate();
   };
 
   const getAlertIcon = (type: string) => {

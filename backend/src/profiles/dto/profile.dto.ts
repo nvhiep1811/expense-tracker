@@ -6,6 +6,8 @@ import {
   IsInt,
   Min,
   Max,
+  Matches,
+  MaxLength,
 } from 'class-validator';
 
 export class UpdateProfileDto {
@@ -52,8 +54,14 @@ export class UploadAvatarDto {
   file_name: string;
 
   @IsString()
+  @Matches(/^image\/(jpeg|jpg|png|gif|webp)$/, {
+    message: 'Chỉ chấp nhận file ảnh (JPEG, PNG, GIF, WebP)',
+  })
   file_type: string;
 
   @IsString()
+  @MaxLength(5242880, {
+    message: 'File không được vượt quá 5MB',
+  })
   base64_data: string;
 }
