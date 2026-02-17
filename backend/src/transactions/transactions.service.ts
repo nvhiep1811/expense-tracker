@@ -45,6 +45,9 @@ export class TransactionsService extends BaseService {
     if (filters?.start_date)
       query = query.gte('occurred_on', filters.start_date);
     if (filters?.end_date) query = query.lte('occurred_on', filters.end_date);
+    if (filters?.search) {
+      query = query.ilike('description', `%${filters.search}%`);
+    }
 
     // Apply pagination
     query = query.range(offset, offset + limit - 1);

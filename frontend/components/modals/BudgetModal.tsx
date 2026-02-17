@@ -112,7 +112,7 @@ export default function BudgetModal({
           if (e.target === e.currentTarget) onClose();
         }}
       >
-        <div className="bg-card-bg rounded-xl max-w-md w-full p-6 border border-card-border max-h-[90vh] overflow-y-auto">
+        <div className="bg-card-bg rounded-xl max-w-md w-full p-4 sm:p-6 mx-4 border border-card-border max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
             <h2
               id="budget-modal-title"
@@ -143,7 +143,7 @@ export default function BudgetModal({
                   <button
                     type="button"
                     onClick={() => setIsCategoryModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
                   >
                     <Plus className="w-4 h-4" />
                     Tạo danh mục chi tiêu
@@ -185,7 +185,7 @@ export default function BudgetModal({
                     <button
                       type="button"
                       onClick={() => setIsCategoryModalOpen(true)}
-                      className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-1 cursor-pointer"
+                      className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-1"
                       title="Thêm danh mục mới"
                     >
                       <Plus className="w-4 h-4" />
@@ -328,7 +328,7 @@ export default function BudgetModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2 border border-card-border rounded-lg hover:bg-hover-bg text-foreground cursor-pointer"
+                className="flex-1 px-4 py-2 border border-card-border rounded-lg hover:bg-hover-bg text-foreground"
               >
                 Hủy
               </button>

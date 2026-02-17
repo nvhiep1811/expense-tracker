@@ -100,4 +100,8 @@ export class TransactionFiltersDto extends PaginationDto {
   @IsOptional()
   @IsDateString()
   end_date?: string;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Header from "@/components/layout/Header";
 import { Search, Plus, Loader2 } from "lucide-react";
 import TransactionModal from "@/components/modals/TransactionModal";
@@ -9,20 +9,20 @@ import type { TransactionFormData, AccountFormData } from "@/lib/validations";
 import type { CategoryFormData } from "@/components/modals/CategoryModal";
 import { transactionsAPI, accountsAPI, categoriesAPI } from "@/lib/api";
 import toast from "react-hot-toast";
-import type { Transaction, Account, Category, PaginationMeta } from "@/types";
+import type { Transaction, PaginationMeta } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useData, dataEvents } from "@/contexts/DataContext";
 
 export default function TransactionsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [pagination, setPagination] = useState<PaginationMeta>({
     page: 1,
     limit: 20,
@@ -30,27 +30,12 @@ export default function TransactionsPage() {
     totalPages: 0,
   });
 
+  // Use global data context for accounts and categories
+  const { accounts, categories, getAccountById, getCategoryById } = useData();
+
   // Debounce search query
   const debouncedSearch = useDebounce(searchQuery, 300);
   const formatCurrency = useCurrency();
-
-  const fetchAccounts = useCallback(async () => {
-    try {
-      const data = await accountsAPI.getAll();
-      setAccounts(data);
-    } catch {
-      toast.error("Không thể tải danh sách tài khoản");
-    }
-  }, []);
-
-  const fetchCategories = useCallback(async () => {
-    try {
-      const data = await categoriesAPI.getAll();
-      setCategories(data);
-    } catch {
-      toast.error("Không thể tải danh sách danh mục");
-    }
-  }, []);
 
   const fetchTransactions = useCallback(async () => {
     try {
@@ -61,6 +46,7 @@ export default function TransactionsPage() {
           | "expense"
           | "transfer"
           | undefined,
+        search: debouncedSearch || undefined,
         page,
         limit,
       });
@@ -75,32 +61,48 @@ export default function TransactionsPage() {
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, limit, filterType]);
 
   useEffect(() => {
-    fetchAccounts();
-    fetchCategories();
-  }, [fetchAccounts, fetchCategories]);
-
-  useEffect(() => {
     fetchTransactions();
-  }, [fetchTransactions, debouncedSearch]);
+  }, [fetchTransactions]);
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    if (page !== 1) {
+      setPage(1);
+    } else {
+      fetchTransactions();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
+
+  // Listen for transaction data changes
+  useEffect(() => {
+    const unsubscribe = dataEvents.subscribe((event) => {
+      if (event.detail.type.startsWith("transactions:")) {
+        fetchTransactions();
+      }
+    });
+    return unsubscribe;
+  }, [fetchTransactions]);
 
   const getAccountName = useMemo(
     () => (accountId: string) => {
-      const account = accounts.find((acc) => acc.id === accountId);
+      const account = getAccountById(accountId);
       return account?.name || "N/A";
     },
-    [accounts],
+    [getAccountById],
   );
 
   const getCategoryName = useMemo(
     () => (categoryId?: string) => {
       if (!categoryId) return "Không danh mục";
-      const category = categories.find((cat) => cat.id === categoryId);
+      const category = getCategoryById(categoryId);
       return category?.name || "N/A";
     },
-    [categories],
+    [getCategoryById],
   );
 
   const handleAddTransaction = async (data: TransactionFormData) => {
@@ -114,7 +116,7 @@ export default function TransactionsPage() {
         description: data.description,
       });
       toast.success("Thêm giao dịch thành công!");
-      fetchTransactions(); // Reload transactions
+      dataEvents.emit("transactions:created");
     } catch (error: unknown) {
       toast.error(
         error instanceof Error ? error.message : "Không thể thêm giao dịch",
@@ -130,8 +132,8 @@ export default function TransactionsPage() {
         icon: data.icon,
         color: data.color,
       });
-      await fetchCategories(); // Reload categories to include the new one
       toast.success("Tạo danh mục thành công!");
+      dataEvents.emit("categories:created");
     } catch (error: unknown) {
       toast.error(
         error instanceof Error ? error.message : "Không thể tạo danh mục",
@@ -148,8 +150,8 @@ export default function TransactionsPage() {
         opening_balance: data.balance,
         color: data.color,
       });
-      await fetchAccounts(); // Reload accounts to include the new one
       toast.success("Tạo tài khoản thành công!");
+      dataEvents.emit("accounts:created");
     } catch (error: unknown) {
       toast.error(
         error instanceof Error ? error.message : "Không thể tạo tài khoản",
@@ -157,21 +159,6 @@ export default function TransactionsPage() {
       throw error; // Re-throw to keep modal open
     }
   };
-
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter((tx) => {
-      const matchesSearch =
-        !debouncedSearch ||
-        tx.description?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        getAccountName(tx.account_id)
-          .toLowerCase()
-          .includes(debouncedSearch.toLowerCase()) ||
-        getCategoryName(tx.category_id)
-          .toLowerCase()
-          .includes(debouncedSearch.toLowerCase());
-      return matchesSearch;
-    });
-  }, [transactions, debouncedSearch, getAccountName, getCategoryName]);
 
   return (
     <>
@@ -181,49 +168,53 @@ export default function TransactionsPage() {
       />
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Filters */}
-            <div className="bg-card-bg rounded-xl p-4 sm:p-6 border border-card-border">
-              <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
-                <div className="flex-1 min-w-full sm:min-w-62.5">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-text w-5 h-5" />
-                    <input
-                      type="text"
-                      placeholder="Tìm kiếm giao dịch..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-input-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground"
-                    />
-                  </div>
+        <div className="space-y-6">
+          {/* Filters */}
+          <div className="bg-card-bg rounded-xl p-4 sm:p-6 border border-card-border">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
+              <div className="flex-1 min-w-full sm:min-w-62.5">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-text w-5 h-5" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Tìm kiếm giao dịch..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    autoComplete="off"
+                    className="w-full pl-10 pr-4 py-2 border border-input-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-input-bg text-foreground"
+                  />
                 </div>
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="w-full sm:w-auto px-4 py-2 border border-input-border rounded-lg focus:ring-2 focus:ring-blue-500 bg-input-bg text-foreground"
-                >
-                  <option value="">Tất cả loại</option>
-                  <option value="income">Thu nhập</option>
-                  <option value="expense">Chi tiêu</option>
-                </select>
-                <button
-                  onClick={() => setIsModalOpen(true)}
-                  className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center space-x-2 cursor-pointer"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span>Thêm giao dịch</span>
-                </button>
+              </div>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="w-full sm:w-auto px-4 py-2 border border-input-border rounded-lg focus:ring-2 focus:ring-blue-500 bg-input-bg text-foreground"
+              >
+                <option value="">Tất cả loại</option>
+                <option value="income">Thu nhập</option>
+                <option value="expense">Chi tiêu</option>
+              </select>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center space-x-2"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Thêm giao dịch</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Transactions Table */}
+          {loading ? (
+            <div className="bg-card-bg rounded-xl border border-card-border">
+              <div className="flex items-center justify-center h-64">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
               </div>
             </div>
-
-            {/* Transactions Table */}
+          ) : (
             <div className="bg-card-bg rounded-xl border border-card-border overflow-hidden">
-              {filteredTransactions.length === 0 ? (
+              {transactions.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-muted-text">Không có giao dịch nào</p>
                 </div>
@@ -232,11 +223,8 @@ export default function TransactionsPage() {
                   {/* Mobile Card View */}
                   <div className="block md:hidden">
                     <div className="divide-y divide-card-border">
-                      {filteredTransactions.map((tx) => (
-                        <div
-                          key={tx.id}
-                          className="p-4 hover:bg-hover-bg cursor-pointer"
-                        >
+                      {transactions.map((tx) => (
+                        <div key={tx.id} className="p-4 hover:bg-hover-bg">
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-foreground truncate">
@@ -295,11 +283,8 @@ export default function TransactionsPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-card-border">
-                        {filteredTransactions.map((tx) => (
-                          <tr
-                            key={tx.id}
-                            className="hover:bg-hover-bg cursor-pointer"
-                          >
+                        {transactions.map((tx) => (
+                          <tr key={tx.id} className="hover:bg-hover-bg">
                             <td className="px-6 py-4 text-sm text-muted-text whitespace-nowrap">
                               {new Date(tx.occurred_on).toLocaleDateString(
                                 "vi-VN",
@@ -346,8 +331,8 @@ export default function TransactionsPage() {
                 </>
               )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Transaction Modal */}
         <TransactionModal

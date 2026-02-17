@@ -44,7 +44,7 @@ export default function Pagination({
         <button
           onClick={() => onPageChange(Math.max(1, page - 1))}
           disabled={page === 1}
-          className="p-2 rounded-lg border border-input-border hover:bg-hover-bg disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+          className="p-2 rounded-lg border border-input-border hover:bg-hover-bg disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
@@ -56,7 +56,7 @@ export default function Pagination({
             onPageChange(Math.min(pagination.totalPages, page + 1))
           }
           disabled={page === pagination.totalPages}
-          className="p-2 rounded-lg border border-input-border hover:bg-hover-bg disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+          className="p-2 rounded-lg border border-input-border hover:bg-hover-bg disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <ChevronRight className="w-5 h-5" />
         </button>

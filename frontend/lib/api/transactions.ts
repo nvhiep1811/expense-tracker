@@ -17,6 +17,7 @@ export const transactionsAPI = {
     if (filters?.category_id) params.append("category_id", filters.category_id);
     if (filters?.start_date) params.append("start_date", filters.start_date);
     if (filters?.end_date) params.append("end_date", filters.end_date);
+    if (filters?.search) params.append("search", filters.search);
     if (filters?.page) params.append("page", filters.page.toString());
     if (filters?.limit) params.append("limit", filters.limit.toString());
 

@@ -188,7 +188,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition cursor-pointer font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
             </button>
@@ -223,7 +223,7 @@ function LoginForm() {
                 }
               }}
               disabled={isGoogleLoading || isFacebookLoading || isLoading}
-              className="flex items-center justify-center px-4 py-3 border border-card-border rounded-lg hover:bg-hover-bg transition cursor-pointer text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center px-4 py-3 border border-card-border rounded-lg hover:bg-hover-bg transition text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isGoogleLoading ? (
                 <div className="w-5 h-5 mr-2 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
@@ -264,7 +264,7 @@ function LoginForm() {
                 }
               }}
               disabled={isGoogleLoading || isFacebookLoading || isLoading}
-              className="flex items-center justify-center px-4 py-3 border border-card-border rounded-lg hover:bg-hover-bg transition cursor-pointer text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center px-4 py-3 border border-card-border rounded-lg hover:bg-hover-bg transition text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isFacebookLoading ? (
                 <div className="w-5 h-5 mr-2 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />

@@ -23,12 +23,12 @@ export default function Header({
   return (
     <div className="bg-header-bg border-b border-header-border px-4 sm:px-6 lg:px-8 py-4">
       <div className="flex items-center justify-between">
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 pr-2">
           <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">
             {title}
           </h1>
           {subtitle && (
-            <p className="text-xs sm:text-sm text-muted-text mt-1 truncate">
+            <p className="text-xs sm:text-sm text-muted-text mt-1 line-clamp-2">
               {subtitle}
             </p>
           )}

@@ -1,22 +1,16 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  lazy,
+  Suspense,
+} from "react";
 import Header from "@/components/layout/Header";
 import StatCard from "@/components/ui/StatCard";
 import { Wallet, TrendingUp, TrendingDown, Loader2, Plus } from "lucide-react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
 import {
   budgetsAPI,
   dashboardAPI,
@@ -28,6 +22,12 @@ import type { BudgetStatus, Transaction } from "@/types";
 import type { DashboardStats } from "@/types/dashboard";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useRouter } from "next/navigation";
+import { dataEvents } from "@/contexts/DataContext";
+
+// Lazy load charts to reduce initial bundle
+const DashboardCharts = lazy(
+  () => import("@/components/dashboard/DashboardCharts"),
+);
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -41,13 +41,8 @@ export default function DashboardPage() {
     [],
   );
 
-  useEffect(() => {
-    fetchDashboardData();
-    checkUnreadAlerts();
-  }, []);
-
   // Check for unread alerts and show notification on login
-  const checkUnreadAlerts = async () => {
+  const checkUnreadAlerts = useCallback(async () => {
     try {
       const count = await alertsAPI.getUnreadCount();
       if (count > 0) {
@@ -78,9 +73,9 @@ export default function DashboardPage() {
     } catch {
       // Silently fail - not critical
     }
-  };
+  }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       // Use optimized dashboard API with database views
@@ -116,7 +111,24 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+    checkUnreadAlerts();
+  }, [fetchDashboardData, checkUnreadAlerts]);
+
+  // Listen for data changes to refresh dashboard
+  useEffect(() => {
+    const unsubscribe = dataEvents.subscribe((event) => {
+      const { type } = event.detail;
+      // Refresh dashboard when transactions/budgets change
+      if (type.startsWith("transactions:") || type.startsWith("budgets:")) {
+        fetchDashboardData();
+      }
+    });
+    return unsubscribe;
+  }, [fetchDashboardData]);
 
   // Statistics from optimized API
   const totalBalance = dashboardStats?.netWorth || 0;
@@ -151,14 +163,17 @@ export default function DashboardPage() {
     });
   }, [dashboardStats]);
 
-  // Get category name from dashboard stats
-  const getCategoryName = (categoryId?: string) => {
-    if (!categoryId) return "Không danh mục";
-    const category = dashboardStats?.categorySpending.find(
-      (c) => c.category_id === categoryId,
-    );
-    return category?.category_name || "N/A";
-  };
+  // Get category name - memoized
+  const getCategoryName = useCallback(
+    (categoryId?: string) => {
+      if (!categoryId) return "Không danh mục";
+      const category = dashboardStats?.categorySpending.find(
+        (c) => c.category_id === categoryId,
+      );
+      return category?.category_name || "N/A";
+    },
+    [dashboardStats],
+  );
 
   // Use recent transactions instead of currentMonthTransactions
   const currentMonthTransactions = recentTransactions;
@@ -221,238 +236,23 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* Charts Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Expense by Category */}
-            <div className="bg-card-bg rounded-xl p-6 border border-card-border">
-              <h3 className="text-lg font-semibold text-foreground mb-4">
-                Chi tiêu theo danh mục
-              </h3>
-              {categorySpending.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-72 text-muted-text">
-                  <p className="mb-4">Chưa có dữ liệu chi tiêu</p>
-                  <button
-                    onClick={() => router.push("/dashboard/transactions")}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Thêm giao dịch đầu tiên
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={categorySpending}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {categorySpending.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value: number | undefined) =>
-                          value ? formatCurrency(value) : "0đ"
-                        }
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="grid grid-cols-2 gap-3 mt-4">
-                    {categorySpending.map((cat, idx) => (
-                      <div key={idx} className="flex items-center space-x-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: cat.color }}
-                        ></div>
-                        <span className="text-sm text-muted-text">
-                          {cat.name}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Income vs Expense */}
-            <div className="bg-card-bg rounded-xl p-6 border border-card-border">
-              <h3 className="text-lg font-semibold text-foreground mb-4">
-                Thu nhập vs Chi tiêu
-              </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="month" stroke="#9ca3af" />
-                  <YAxis
-                    stroke="#9ca3af"
-                    tickFormatter={(value) => {
-                      if (value >= 1000000)
-                        return `${(value / 1000000).toFixed(1)}tr`;
-                      if (value >= 1000) return `${(value / 1000).toFixed(0)}k`;
-                      return value.toString();
-                    }}
-                  />
-                  <Tooltip
-                    formatter={(value: number | undefined) =>
-                      value ? formatCurrency(value) : "0đ"
-                    }
-                  />
-                  <Legend />
-                  <Bar
-                    dataKey="income"
-                    fill="#10b981"
-                    name="Thu nhập"
-                    radius={[8, 8, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="expense"
-                    fill="#ef4444"
-                    name="Chi tiêu"
-                    radius={[8, 8, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Recent Transactions & Budget Overview */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Recent Transactions */}
-            <div className="bg-card-bg rounded-xl p-6 border border-card-border">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-foreground">
-                  Giao dịch gần đây
-                </h3>
-                <button
-                  onClick={() => router.push("/dashboard/transactions")}
-                  className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-                >
-                  Xem tất cả
-                </button>
+          {/* Lazy-loaded Charts */}
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
               </div>
-              <div className="space-y-3">
-                {currentMonthTransactions.length === 0 ? (
-                  <div className="flex flex-col items-center py-8 text-muted-text">
-                    <p className="mb-4">Chưa có giao dịch nào</p>
-                    <button
-                      onClick={() => router.push("/dashboard/transactions")}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Thêm giao dịch
-                    </button>
-                  </div>
-                ) : (
-                  currentMonthTransactions.slice(0, 5).map((tx) => (
-                    <div
-                      key={tx.id}
-                      className="flex items-center justify-between p-3 bg-hover-bg rounded-lg"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div
-                          className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                            tx.type === "income"
-                              ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
-                              : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                          }`}
-                        >
-                          {tx.type === "income" ? (
-                            <TrendingUp className="w-5 h-5" />
-                          ) : (
-                            <TrendingDown className="w-5 h-5" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">
-                            {getCategoryName(tx.category_id)}
-                          </p>
-                          <p className="text-sm text-muted-text">
-                            {new Date(tx.occurred_on).toLocaleDateString(
-                              "vi-VN",
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                      <span
-                        className={`font-semibold ${
-                          tx.type === "income"
-                            ? "text-green-600 dark:text-green-400"
-                            : "text-red-600 dark:text-red-400"
-                        }`}
-                      >
-                        {tx.type === "income" ? "+" : "-"}
-                        {formatCurrency(tx.amount)}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Budget Progress */}
-            <div className="bg-card-bg rounded-xl p-6 border border-card-border">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-foreground">
-                  Ngân sách tháng này
-                </h3>
-                <button
-                  onClick={() => router.push("/dashboard/budgets")}
-                  className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-                >
-                  Chi tiết
-                </button>
-              </div>
-              <div className="space-y-4">
-                {budgets.length === 0 ? (
-                  <div className="flex flex-col items-center py-8 text-muted-text">
-                    <p className="mb-4">Chưa có ngân sách nào</p>
-                    <button
-                      onClick={() => router.push("/dashboard/budgets")}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Tạo ngân sách
-                    </button>
-                  </div>
-                ) : (
-                  budgets.slice(0, 5).map((budget) => {
-                    const percentage = budget.percentage;
-                    return (
-                      <div key={budget.budget_id}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-foreground">
-                            {budget.category_name || "Không danh mục"}
-                          </span>
-                          <span className="text-sm text-muted-text">
-                            {formatCurrency(budget.spent)} /{" "}
-                            {formatCurrency(budget.limit_amount)}
-                          </span>
-                        </div>
-                        <div className="w-full bg-hover-bg rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full transition-all ${
-                              percentage > 100
-                                ? "bg-red-500"
-                                : percentage > budget.alert_threshold_pct
-                                  ? "bg-orange-500"
-                                  : "bg-green-500"
-                            }`}
-                            style={{ width: `${Math.min(percentage, 100)}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          </div>
+            }
+          >
+            <DashboardCharts
+              categorySpending={categorySpending}
+              monthlyData={monthlyData}
+              budgets={budgets}
+              currentMonthTransactions={currentMonthTransactions}
+              formatCurrency={formatCurrency}
+              getCategoryName={getCategoryName}
+            />
+          </Suspense>
         </div>
       </main>
     </>
