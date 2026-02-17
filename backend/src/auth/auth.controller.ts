@@ -8,6 +8,7 @@ import {
   UseGuards,
   Headers,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import {
   CheckEmailDto,
@@ -38,6 +39,7 @@ export class AuthController {
    * POST /auth/register
    * Register a new user
    */
+  @Throttle({ auth: { limit: 5, ttl: 60000 } })
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() registerDto: RegisterDto) {
@@ -48,6 +50,7 @@ export class AuthController {
    * POST /auth/login
    * Login user
    */
+  @Throttle({ auth: { limit: 5, ttl: 60000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto) {
@@ -82,6 +85,7 @@ export class AuthController {
    * POST /auth/forgot-password
    * Send password reset email
    */
+  @Throttle({ auth: { limit: 5, ttl: 60000 } })
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {

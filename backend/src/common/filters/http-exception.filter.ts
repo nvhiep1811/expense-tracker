@@ -38,10 +38,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     // Log 500 errors for debugging
     if (status === HttpStatus.INTERNAL_SERVER_ERROR) {
+      const isDevelopment = process.env.NODE_ENV === 'development';
       console.error('Internal Server Error:', {
         message,
-        exception,
-        stack: exception instanceof Error ? exception.stack : undefined,
+        exception: isDevelopment ? exception : undefined,
+        stack:
+          isDevelopment && exception instanceof Error
+            ? exception.stack
+            : undefined,
       });
     }
 

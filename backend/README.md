@@ -83,8 +83,11 @@
 
 - ✅ Helmet security headers
 - ✅ CORS protection
-- ✅ Rate limiting (10 requests/60s)
-- ✅ Input validation với class-validator
+- ✅ Rate limiting: 100 req/min (5 req/min for auth endpoints)
+- ✅ Avatar upload validation (5MB max, MIME type check)
+- ✅ Generic error messages (no information disclosure)
+- ✅ Conditional logging (stack traces in dev only)
+- ✅ Input validation with class-validator
 - ✅ SQL injection protection (Supabase RLS)
 - ✅ XSS protection
 - ✅ Throttling
@@ -92,9 +95,10 @@
 ### ⚡ Performance
 
 - ✅ Response caching (5min TTL)
+- ✅ Auth flow optimized (profile included in login response)
 - ✅ Gzip compression
 - ✅ Database connection pooling
-- ✅ Optimized queries với database views
+- ✅ Optimized queries with database views
 
 ## 🏗️ Architecture
 

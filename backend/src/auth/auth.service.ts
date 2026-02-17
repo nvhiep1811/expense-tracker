@@ -98,14 +98,27 @@ export class AuthService {
     });
 
     if (error) {
+      this.logger.error('Login failed', error);
       return {
-        message: error.message,
+        message: 'Email hoặc mật khẩu không đúng.',
       };
+    }
+
+    // Fetch user profile immediately after login
+    const { data: profile, error: profileError } = await this.supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profileError) {
+      this.logger.warn('Failed to fetch profile after login', profileError);
     }
 
     return {
       user: data.user,
       session: data.session,
+      profile: profile || null,
       message: 'Đăng nhập thành công!',
     };
   }
