@@ -2,6 +2,7 @@
 export { accountsAPI } from "./accounts";
 export { transactionsAPI } from "./transactions";
 export { categoriesAPI } from "./categories";
+export type { CreateCategoryRequest } from "./categories";
 export { budgetsAPI } from "./budgets";
 export { alertsAPI } from "./alerts";
 export { authAPI, profilesAPI } from "./auth";
