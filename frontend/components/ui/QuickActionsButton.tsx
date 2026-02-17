@@ -12,13 +12,13 @@ import type {
 } from "@/lib/validations";
 import type { CategoryFormData } from "@/components/modals/CategoryModal";
 import {
-  transactionsAPI,
-  accountsAPI,
-  categoriesAPI,
-  budgetsAPI,
-} from "@/lib/api";
-import toast from "react-hot-toast";
-import { useData, dataEvents } from "@/contexts/DataContext";
+  useAccountsQuery,
+  useCategoriesQuery,
+  useCreateTransaction,
+  useCreateAccount,
+  useCreateCategory,
+  useCreateBudget,
+} from "@/hooks";
 
 export default function QuickActionsButton() {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,8 +26,15 @@ export default function QuickActionsButton() {
     "transaction" | "account" | "budget" | null
   >(null);
 
-  // Use global data context for accounts and categories
-  const { accounts, categories } = useData();
+  // React Query hooks
+  const { data: accounts = [] } = useAccountsQuery();
+  const { data: categories = [] } = useCategoriesQuery();
+
+  // Mutations
+  const createTransactionMutation = useCreateTransaction();
+  const createAccountMutation = useCreateAccount();
+  const createCategoryMutation = useCreateCategory();
+  const createBudgetMutation = useCreateBudget();
 
   // Open modal
   const openModal = useCallback(
@@ -58,102 +65,57 @@ export default function QuickActionsButton() {
 
   // Handler functions
   const handleAddTransaction = async (data: TransactionFormData) => {
-    try {
-      await transactionsAPI.create({
-        type: data.type,
-        amount: data.amount,
-        account_id: data.account,
-        category_id: data.category,
-        occurred_on: data.date,
-        description: data.description,
-      });
-      toast.success("Thêm giao dịch thành công!");
-      setActiveModal(null);
-      // Emit event to refresh data globally
-      dataEvents.emit("transactions:created");
-    } catch (error: unknown) {
-      toast.error(
-        error instanceof Error ? error.message : "Không thể thêm giao dịch",
-      );
-    }
+    await createTransactionMutation.mutateAsync({
+      type: data.type,
+      amount: data.amount,
+      account_id: data.account,
+      category_id: data.category,
+      occurred_on: data.date,
+      description: data.description,
+    });
+    setActiveModal(null);
   };
 
   const handleAddAccount = async (data: AccountFormData) => {
-    try {
-      await accountsAPI.create({
-        name: data.name,
-        type: data.type,
-        opening_balance: data.balance,
-        currency: "VND",
-        color: data.color,
-      });
-      toast.success("Thêm tài khoản thành công!");
-      setActiveModal(null);
-      // Emit event to refresh accounts globally
-      dataEvents.emit("accounts:created");
-    } catch (error: unknown) {
-      toast.error(
-        error instanceof Error ? error.message : "Không thể thêm tài khoản",
-      );
-      throw error;
-    }
+    await createAccountMutation.mutateAsync({
+      name: data.name,
+      type: data.type,
+      opening_balance: data.balance,
+      currency: "VND",
+      color: data.color,
+    });
+    setActiveModal(null);
   };
 
   const handleAddBudget = async (data: BudgetFormData) => {
-    try {
-      await budgetsAPI.create({
-        category_id: data.category,
-        period: data.period,
-        start_date: data.start_date,
-        end_date: data.end_date,
-        limit_amount: data.amount,
-        alert_threshold_pct: data.alert_threshold || 80,
-        rollover: data.rollover || false,
-      });
-      toast.success("Thêm ngân sách thành công!");
-      setActiveModal(null);
-      dataEvents.emit("budgets:created");
-    } catch (error: unknown) {
-      toast.error(
-        error instanceof Error ? error.message : "Không thể thêm ngân sách",
-      );
-    }
+    await createBudgetMutation.mutateAsync({
+      category_id: data.category,
+      period: data.period,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      limit_amount: data.amount,
+      alert_threshold_pct: data.alert_threshold || 80,
+      rollover: data.rollover || false,
+    });
+    setActiveModal(null);
   };
 
   const handleCategoryCreated = async (data: CategoryFormData) => {
-    try {
-      await categoriesAPI.create({
-        name: data.name,
-        side: data.side,
-        icon: data.icon,
-        color: data.color,
-      });
-      toast.success("Tạo danh mục thành công!");
-      dataEvents.emit("categories:created");
-    } catch (error: unknown) {
-      toast.error(
-        error instanceof Error ? error.message : "Không thể tạo danh mục",
-      );
-      throw error;
-    }
+    await createCategoryMutation.mutateAsync({
+      name: data.name,
+      side: data.side,
+      icon: data.icon,
+      color: data.color,
+    });
   };
 
   const handleAccountCreated = async (data: AccountFormData) => {
-    try {
-      await accountsAPI.create({
-        name: data.name,
-        type: data.type,
-        opening_balance: data.balance,
-        color: data.color,
-      });
-      toast.success("Tạo tài khoản thành công!");
-      dataEvents.emit("accounts:created");
-    } catch (error: unknown) {
-      toast.error(
-        error instanceof Error ? error.message : "Không thể tạo tài khoản",
-      );
-      throw error;
-    }
+    await createAccountMutation.mutateAsync({
+      name: data.name,
+      type: data.type,
+      opening_balance: data.balance,
+      color: data.color,
+    });
   };
 
   const quickActions = [

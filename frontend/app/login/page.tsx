@@ -216,8 +216,7 @@ function LoginForm() {
                 setIsGoogleLoading(true);
                 try {
                   await loginWithGoogle();
-                } catch (error) {
-                  // Error already handled in loginWithGoogle
+                } catch {
                 } finally {
                   setIsGoogleLoading(false);
                 }
@@ -257,8 +256,7 @@ function LoginForm() {
                 setIsFacebookLoading(true);
                 try {
                   await loginWithFacebook();
-                } catch (error) {
-                  // Error already handled in loginWithFacebook
+                } catch {
                 } finally {
                   setIsFacebookLoading(false);
                 }
