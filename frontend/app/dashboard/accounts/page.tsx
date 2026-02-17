@@ -2,13 +2,11 @@
 
 import { useState, useMemo } from "react";
 import Header from "@/components/layout/Header";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import AccountModal from "@/components/modals/AccountModal";
+import { AccountsPageSkeleton } from "@/components/ui/Skeleton";
 import type { AccountFormData } from "@/lib/validations";
-import { accountsAPI } from "@/lib/api";
-import { toast } from "react-hot-toast";
-import { useCurrency } from "@/hooks/useCurrency";
-import { useAccounts, dataEvents } from "@/contexts/DataContext";
+import { useCurrency, useAccountsQuery, useCreateAccount } from "@/hooks";
 
 // Account type info with emojis
 const ACCOUNT_TYPE_INFO: Record<string, { label: string; emoji: string }> = {
@@ -21,8 +19,9 @@ export default function AccountsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const formatCurrency = useCurrency();
 
-  // Use global accounts from DataContext
-  const { accounts: allAccounts, loading } = useAccounts();
+  // React Query hooks
+  const { data: allAccounts = [], isLoading } = useAccountsQuery();
+  const createAccountMutation = useCreateAccount();
 
   // Filter out archived accounts
   const accounts = useMemo(
@@ -41,21 +40,14 @@ export default function AccountsPage() {
   };
 
   const handleAddAccount = async (data: AccountFormData) => {
-    try {
-      await accountsAPI.create({
-        name: data.name,
-        type: data.type,
-        opening_balance: data.balance,
-        currency: "VND",
-        color: data.color,
-      });
-      toast.success("Thêm tài khoản thành công!");
-      dataEvents.emit("accounts:created");
-    } catch (error: unknown) {
-      toast.error(
-        error instanceof Error ? error.message : "Không thể thêm tài khoản",
-      );
-    }
+    await createAccountMutation.mutateAsync({
+      name: data.name,
+      type: data.type,
+      opening_balance: data.balance,
+      currency: "VND",
+      color: data.color,
+    });
+    setIsModalOpen(false);
   };
 
   return (
@@ -63,10 +55,8 @@ export default function AccountsPage() {
       <Header title="Tài khoản" subtitle="Quản lý các tài khoản của bạn" />
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          </div>
+        {isLoading ? (
+          <AccountsPageSkeleton />
         ) : (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

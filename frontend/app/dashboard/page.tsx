@@ -1,28 +1,17 @@
 "use client";
 
-import {
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  lazy,
-  Suspense,
-} from "react";
+import { useMemo, lazy, Suspense } from "react";
 import Header from "@/components/layout/Header";
 import StatCard from "@/components/ui/StatCard";
-import { Wallet, TrendingUp, TrendingDown, Loader2, Plus } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { DashboardSkeleton } from "@/components/ui/Skeleton";
+import type { BudgetStatus } from "@/types";
 import {
-  budgetsAPI,
-  dashboardAPI,
-  transactionsAPI,
-  alertsAPI,
-} from "@/lib/api";
-import toast from "react-hot-toast";
-import type { BudgetStatus, Transaction } from "@/types";
-import type { DashboardStats } from "@/types/dashboard";
-import { useCurrency } from "@/hooks/useCurrency";
-import { useRouter } from "next/navigation";
-import { dataEvents } from "@/contexts/DataContext";
+  useCurrency,
+  useDashboardStatsQuery,
+  useBudgetStatusQuery,
+  useTransactionsQuery,
+} from "@/hooks";
 
 // Lazy load charts to reduce initial bundle
 const DashboardCharts = lazy(
@@ -30,105 +19,32 @@ const DashboardCharts = lazy(
 );
 
 export default function DashboardPage() {
-  const router = useRouter();
   const formatCurrency = useCurrency();
-  const [loading, setLoading] = useState(true);
-  const [budgets, setBudgets] = useState<BudgetStatus[]>([]);
-  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(
-    null,
-  );
-  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>(
-    [],
-  );
 
-  // Check for unread alerts and show notification on login
-  const checkUnreadAlerts = useCallback(async () => {
-    try {
-      const count = await alertsAPI.getUnreadCount();
-      if (count > 0) {
-        // Use unique ID to prevent duplicate toasts
-        toast.dismiss("unread-alerts");
-        toast(
-          (t) => (
-            <div className="flex items-center gap-3">
-              <span>
-                Bạn có <strong>{count}</strong> thông báo chưa đọc
-              </span>
-              <button
-                onClick={() => toast.dismiss(t.id)}
-                className="text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Xem
-              </button>
-            </div>
-          ),
-          {
-            id: "unread-alerts",
-            icon: "🔔",
-            duration: 5000,
-            position: "top-right",
-          },
-        );
-      }
-    } catch {
-      // Silently fail - not critical
-    }
-  }, []);
+  // React Query hooks
+  const { data: dashboardStats, isLoading: statsLoading } =
+    useDashboardStatsQuery();
+  const { data: budgetStatusData = [], isLoading: budgetsLoading } =
+    useBudgetStatusQuery();
+  const { data: transactionsData, isLoading: transactionsLoading } =
+    useTransactionsQuery({ limit: 10 });
 
-  const fetchDashboardData = useCallback(async () => {
-    try {
-      setLoading(true);
-      // Use optimized dashboard API with database views
-      const [budgetStatusData, statsData, transactionsData] = await Promise.all(
-        [
-          budgetsAPI.getStatus(), // ✅ Use v_budget_status view
-          dashboardAPI.getStats(), // Uses database views for performance
-          transactionsAPI.getAll({ limit: 10 }), // Get recent transactions
-        ],
-      );
+  const isLoading = statsLoading || budgetsLoading || transactionsLoading;
+  const recentTransactions = transactionsData?.data ?? [];
 
-      // Filter only active budgets for current month
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
+  // Filter only active budgets for current month
+  const budgets: BudgetStatus[] = useMemo(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
 
-      const activeBudgets = budgetStatusData.filter((budget) => {
-        const startDate = new Date(budget.start_date);
-        const endDate = new Date(budget.end_date);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
-        return now >= startDate && now <= endDate;
-      });
-
-      setBudgets(activeBudgets);
-      setDashboardStats(statsData);
-      setRecentTransactions(transactionsData.data);
-    } catch (error: unknown) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Không thể tải dữ liệu dashboard",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchDashboardData();
-    checkUnreadAlerts();
-  }, [fetchDashboardData, checkUnreadAlerts]);
-
-  // Listen for data changes to refresh dashboard
-  useEffect(() => {
-    const unsubscribe = dataEvents.subscribe((event) => {
-      const { type } = event.detail;
-      // Refresh dashboard when transactions/budgets change
-      if (type.startsWith("transactions:") || type.startsWith("budgets:")) {
-        fetchDashboardData();
-      }
+    return budgetStatusData.filter((budget) => {
+      const startDate = new Date(budget.start_date);
+      const endDate = new Date(budget.end_date);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      return now >= startDate && now <= endDate;
     });
-    return unsubscribe;
-  }, [fetchDashboardData]);
+  }, [budgetStatusData]);
 
   // Statistics from optimized API
   const totalBalance = dashboardStats?.netWorth || 0;
@@ -164,8 +80,8 @@ export default function DashboardPage() {
   }, [dashboardStats]);
 
   // Get category name - memoized
-  const getCategoryName = useCallback(
-    (categoryId?: string) => {
+  const getCategoryName = useMemo(
+    () => (categoryId?: string) => {
       if (!categoryId) return "Không danh mục";
       const category = dashboardStats?.categorySpending.find(
         (c) => c.category_id === categoryId,
@@ -178,14 +94,12 @@ export default function DashboardPage() {
   // Use recent transactions instead of currentMonthTransactions
   const currentMonthTransactions = recentTransactions;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <>
         <Header title="Tổng quan" subtitle="Đang tải dữ liệu..." />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          </div>
+          <DashboardSkeleton />
         </main>
       </>
     );
