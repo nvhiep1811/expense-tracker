@@ -45,6 +45,7 @@ export default function Header({
                   height={40}
                   className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
                   unoptimized
+                  priority
                 />
               ) : (
                 <span className="text-sm sm:text-base text-blue-600 dark:text-blue-400 font-semibold">
