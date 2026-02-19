@@ -73,6 +73,7 @@ export class AccountsService extends BaseService {
       .update(updateData)
       .eq('id', accountId)
       .eq('user_id', userId)
+      .is('deleted_at', null)
       .select()
       .single();
 

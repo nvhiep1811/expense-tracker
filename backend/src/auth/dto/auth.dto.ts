@@ -1,4 +1,11 @@
-import { IsEmail, IsNotEmpty, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  MinLength,
+  IsOptional,
+  IsString,
+  IsIn,
+} from 'class-validator';
 
 export class CheckEmailDto {
   @IsEmail({}, { message: 'Email không hợp lệ' })
@@ -42,5 +49,18 @@ export class ResetPasswordDto {
 
 export class OAuthLoginDto {
   @IsNotEmpty({ message: 'Provider không được để trống' })
+  @IsIn(['google', 'facebook'], {
+    message: 'Provider phải là google hoặc facebook',
+  })
   provider: 'google' | 'facebook';
+}
+
+export class SetSessionDto {
+  @IsNotEmpty({ message: 'Access token không được để trống' })
+  @IsString()
+  access_token: string;
+
+  @IsOptional()
+  @IsString()
+  refresh_token?: string;
 }

@@ -40,8 +40,7 @@ export default function AuthDebugPage() {
   const [refreshing, setRefreshing] = useState(false);
 
   const collectDebugInfo = () => {
-    const accessToken = getCookie("access_token");
-    const refreshToken = getCookie("refresh_token");
+    const authSession = getCookie("auth_session");
     const userData = localStorage.getItem("user_data");
 
     setDebugInfo({
@@ -54,8 +53,8 @@ export default function AuthDebugPage() {
           }
         : null,
       cookies: {
-        accessToken: accessToken || null,
-        refreshToken: refreshToken || null,
+        accessToken: authSession ? "[httpOnly - not accessible]" : null,
+        refreshToken: authSession ? "[httpOnly - not accessible]" : null,
       },
       localStorage: {
         userData: userData || null,

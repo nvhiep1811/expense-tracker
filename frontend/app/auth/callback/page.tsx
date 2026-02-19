@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { setCookie } from "@/lib/cookies";
-import { profilesAPI } from "@/lib/api";
+import { authAPI, profilesAPI } from "@/lib/api";
 import toast from "react-hot-toast";
 import { logger } from "@/lib/logger";
 
@@ -86,11 +86,9 @@ export default function AuthCallback() {
           toast.success("Xác thực thành công! Vui lòng đặt lại mật khẩu.");
           router.replace("/reset-password");
         } else if (type === "email_change") {
-          // Xử lý xác nhận thay đổi email
-          setCookie("access_token", accessToken, 7);
-          if (refreshToken) {
-            setCookie("refresh_token", refreshToken, 30);
-          }
+          // Xử lý xác nhận thay đổi email - set httpOnly cookie via backend
+          await authAPI.setSession(accessToken, refreshToken || undefined);
+          setCookie("auth_session", "1", 7);
 
           toast.success(
             "Thay đổi email thành công! Email của bạn đã được cập nhật.",
@@ -98,11 +96,9 @@ export default function AuthCallback() {
           );
           setTimeout(() => router.replace("/dashboard/profile"), 1000);
         } else {
-          // Với signup, login bình thường hoặc OAuth, lưu vào cookie
-          setCookie("access_token", accessToken, 7);
-          if (refreshToken) {
-            setCookie("refresh_token", refreshToken, 30);
-          }
+          // Với signup, login bình thường hoặc OAuth - set httpOnly cookie via backend
+          await authAPI.setSession(accessToken, refreshToken || undefined);
+          setCookie("auth_session", "1", 7);
 
           // Lấy profile (không chặn flow nếu thất bại)
           try {

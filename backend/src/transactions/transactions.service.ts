@@ -46,7 +46,10 @@ export class TransactionsService extends BaseService {
       query = query.gte('occurred_on', filters.start_date);
     if (filters?.end_date) query = query.lte('occurred_on', filters.end_date);
     if (filters?.search) {
-      query = query.ilike('description', `%${filters.search}%`);
+      // Search across description and note fields
+      query = query.or(
+        `description.ilike.%${filters.search}%,note.ilike.%${filters.search}%`,
+      );
     }
 
     // Apply pagination
@@ -115,6 +118,7 @@ export class TransactionsService extends BaseService {
       .update(updateData)
       .eq('id', transactionId)
       .eq('user_id', userId)
+      .is('deleted_at', null)
       .select()
       .single();
 

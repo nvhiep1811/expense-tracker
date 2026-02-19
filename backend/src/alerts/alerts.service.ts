@@ -105,7 +105,8 @@ export class AlertsService extends BaseService {
       .from('alerts')
       .update({ is_read: true })
       .eq('user_id', userId)
-      .eq('is_read', false);
+      .eq('is_read', false)
+      .is('dismissed_at', null); // Don't touch dismissed alerts
 
     if (error) throw error;
   }
@@ -127,10 +128,13 @@ export class AlertsService extends BaseService {
 
   async removeAll(userId: string, accessToken: string): Promise<void> {
     const supabase = this.getAuthenticatedClient(accessToken);
+    // Only hard-delete alerts that have already been dismissed.
+    // Active (non-dismissed) alerts must be dismissed first via dismissAll().
     const { error } = await supabase
       .from('alerts')
       .delete()
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .not('dismissed_at', 'is', null);
 
     if (error) throw error;
   }

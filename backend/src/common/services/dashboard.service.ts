@@ -179,7 +179,7 @@ export class DashboardService extends BaseService {
       .from('v_net_worth')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle(); // view returns no rows when user has no accounts
 
     if (error) throw new Error(error.message);
 

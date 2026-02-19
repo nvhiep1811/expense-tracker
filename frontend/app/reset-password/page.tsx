@@ -65,11 +65,9 @@ export default function ResetPasswordPage() {
 
       toast.success(response.message);
 
-      // Sau khi reset thành công, LƯU token vào cookie
-      setCookie("access_token", accessToken, 7);
-      if (refreshToken) {
-        setCookie("refresh_token", refreshToken, 30);
-      }
+      // Sau khi reset thành công, set httpOnly cookie via backend
+      await authAPI.setSession(accessToken, refreshToken || undefined);
+      setCookie("auth_session", "1", 7);
 
       // Xóa token khỏi sessionStorage
       sessionStorage.removeItem("recovery_token");
