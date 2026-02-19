@@ -6,8 +6,9 @@ const authRoutes = ["/login", "/register"];
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const accessToken = request.cookies.get("access_token")?.value;
-  const isAuthenticated = !!accessToken;
+  // Check for auth_session indicator (actual access_token is httpOnly)
+  const hasSession = request.cookies.get("auth_session")?.value;
+  const isAuthenticated = !!hasSession;
 
   if (pathname === "/" && isAuthenticated) {
     return NextResponse.redirect(new URL("/dashboard", request.url));

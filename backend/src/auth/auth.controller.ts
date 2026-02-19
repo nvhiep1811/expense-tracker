@@ -7,7 +7,11 @@ import {
   Get,
   UseGuards,
   Headers,
+  Res,
+  Req,
 } from '@nestjs/common';
+import type { Response, Request } from 'express';
+import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import {
@@ -17,13 +21,59 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
   OAuthLoginDto,
+  SetSessionDto,
 } from './dto/auth.dto';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  /**
+   * Helper: Get cookie options for httpOnly secure cookies
+   */
+  private getCookieOptions(maxAgeDays: number = 7) {
+    const isProduction = this.configService.get('NODE_ENV') === 'production';
+    return {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax' as const,
+      path: '/',
+      maxAge: maxAgeDays * 24 * 60 * 60 * 1000, // Convert days to ms
+    };
+  }
+
+  /**
+   * Helper: Set auth cookies on response
+   */
+  private setAuthCookies(
+    res: Response,
+    accessToken: string,
+    refreshToken?: string,
+  ) {
+    res.cookie('access_token', accessToken, this.getCookieOptions(7));
+    if (refreshToken) {
+      res.cookie('refresh_token', refreshToken, this.getCookieOptions(30));
+    }
+  }
+
+  /**
+   * Helper: Clear auth cookies on response
+   */
+  private clearAuthCookies(res: Response) {
+    const clearOptions = {
+      httpOnly: true,
+      secure: this.configService.get('NODE_ENV') === 'production',
+      sameSite: 'lax' as const,
+      path: '/',
+    };
+    res.clearCookie('access_token', clearOptions);
+    res.clearCookie('refresh_token', clearOptions);
+  }
 
   /**
    * POST /auth/check-email
@@ -31,6 +81,7 @@ export class AuthController {
    */
   @Post('check-email')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async checkEmail(@Body() checkEmailDto: CheckEmailDto) {
     return this.authService.checkEmailExists(checkEmailDto);
   }
@@ -48,24 +99,76 @@ export class AuthController {
 
   /**
    * POST /auth/login
-   * Login user
+   * Login user - sets httpOnly cookies
    */
   @Throttle({ auth: { limit: 5, ttl: 60000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.login(loginDto);
+
+    // Set httpOnly cookies if login successful
+    if (result.session?.access_token) {
+      this.setAuthCookies(
+        res,
+        result.session.access_token,
+        result.session.refresh_token,
+      );
+    }
+
+    // Don't expose tokens in response body
+    const { session, ...safeResult } = result;
+    return {
+      ...safeResult,
+      authenticated: !!session?.access_token,
+    };
   }
 
   /**
    * POST /auth/logout
-   * Logout user
+   * Logout user - clears httpOnly cookies
    */
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard)
-  async logout() {
-    return this.authService.logout();
+  async logout(
+    @Req() request: Request & { accessToken?: string },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.logout(request.accessToken);
+    this.clearAuthCookies(res);
+    return result;
+  }
+
+  /**
+   * POST /auth/set-session
+   * Set httpOnly cookies from tokens (used by OAuth callback & token refresh)
+   */
+  @Post('set-session')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async setSession(
+    @Body() setSessionDto: SetSessionDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // Verify the token is valid before setting cookies
+    const isValid = await this.authService.verifyToken(
+      setSessionDto.access_token,
+    );
+    if (!isValid) {
+      throw new Error('Token không hợp lệ');
+    }
+
+    this.setAuthCookies(
+      res,
+      setSessionDto.access_token,
+      setSessionDto.refresh_token,
+    );
+
+    return { message: 'Session đã được thiết lập', authenticated: true };
   }
 
   /**
@@ -74,7 +177,7 @@ export class AuthController {
    */
   @Get('me')
   @UseGuards(AuthGuard)
-  async getCurrentUser(@CurrentUser() user: any) {
+  getCurrentUser(@CurrentUser() user: Record<string, unknown>) {
     return {
       user,
       message: 'Lấy thông tin người dùng thành công',

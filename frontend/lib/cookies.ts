@@ -1,7 +1,19 @@
+/**
+ * Cookie utilities for client-side (non-sensitive) cookies only.
+ *
+ * SECURITY NOTE: access_token and refresh_token are now handled as httpOnly
+ * cookies set by the backend. These functions should only be used for
+ * non-sensitive cookies like UI preferences and auth session indicators.
+ */
+
+const isProduction =
+  typeof window !== "undefined" && window.location.protocol === "https:";
+
 export const setCookie = (name: string, value: string, days: number = 7) => {
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+  const secure = isProduction ? ";Secure" : "";
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax${secure}`;
 };
 
 export const getCookie = (name: string): string | null => {
@@ -16,5 +28,6 @@ export const getCookie = (name: string): string | null => {
 };
 
 export const deleteCookie = (name: string) => {
-  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+  const secure = isProduction ? ";Secure" : "";
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;SameSite=Lax${secure}`;
 };

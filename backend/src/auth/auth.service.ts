@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient, Provider } from '@supabase/supabase-js';
 import { CheckEmailDto, RegisterDto, LoginDto } from './dto/auth.dto';
@@ -99,9 +99,7 @@ export class AuthService {
 
     if (error) {
       this.logger.error('Login failed', error);
-      return {
-        message: 'Email hoặc mật khẩu không đúng.',
-      };
+      throw new UnauthorizedException('Email hoặc mật khẩu không đúng.');
     }
 
     // Fetch user profile immediately after login
@@ -124,13 +122,24 @@ export class AuthService {
   }
 
   /**
-   * Logout user
+   * Logout user - invalidates the JWT token via admin API if available
    */
-  async logout() {
-    const { error } = await this.supabase.auth.signOut();
-
-    if (error) {
-      throw error;
+  async logout(accessToken?: string) {
+    // Use admin API to actually revoke the session (prevents token reuse after logout)
+    if (accessToken && this.supabaseAdmin) {
+      try {
+        await this.supabaseAdmin.auth.admin.signOut(accessToken);
+      } catch (adminError) {
+        this.logger.warn('Admin signOut failed, falling back', adminError);
+        // Fall back to anon signOut (clears in-memory session only)
+        await this.supabase.auth.signOut();
+      }
+    } else {
+      // No admin client or no token - anon signOut (best-effort)
+      const { error } = await this.supabase.auth.signOut();
+      if (error) {
+        this.logger.warn('Logout signOut error', error);
+      }
     }
 
     return {
@@ -227,6 +236,21 @@ export class AuthService {
         throw error;
       }
       throw new Error('Không thể đặt lại mật khẩu. Vui lòng thử lại.');
+    }
+  }
+
+  /**
+   * Verify if a token is valid
+   */
+  async verifyToken(accessToken: string): Promise<boolean> {
+    try {
+      const {
+        data: { user },
+        error,
+      } = await this.supabase.auth.getUser(accessToken);
+      return !error && !!user;
+    } catch {
+      return false;
     }
   }
 

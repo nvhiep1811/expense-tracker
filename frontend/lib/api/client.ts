@@ -12,47 +12,21 @@ const api = axios.create({
     Pragma: "no-cache",
     Expires: "0",
   },
-  withCredentials: true,
+  withCredentials: true, // Automatically send httpOnly cookies
 });
-
-// Helper to get cookie value
-const getCookie = (name: string): string | null => {
-  if (typeof document === "undefined") return null;
-  const nameEQ = name + "=";
-  const ca = document.cookie.split(";");
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === " ") c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-};
-
-// Request interceptor to add token
-api.interceptors.request.use(
-  (config) => {
-    const token = getCookie("access_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  },
-);
 
 // Response interceptor to handle errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear cookie
+      // Clear client-side auth indicator
       if (typeof document !== "undefined") {
         document.cookie =
-          "access_token=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
+          "auth_session=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;SameSite=Lax";
       }
       if (typeof window !== "undefined") {
+        localStorage.removeItem("user_data");
         window.location.href = "/login";
       }
     }

@@ -5,9 +5,13 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import helmet from 'helmet';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Cookie parser for httpOnly cookie support
+  app.use(cookieParser());
 
   // Security headers
   app.use(
@@ -19,7 +23,7 @@ async function bootstrap() {
   // Response compression
   app.use(compression());
 
-  // Enable CORS
+  // Enable CORS with credentials for httpOnly cookies
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,

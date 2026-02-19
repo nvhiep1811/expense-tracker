@@ -10,6 +10,7 @@ import { Request } from 'express';
 
 interface AuthenticatedRequest extends Request {
   user?: any;
+  accessToken?: string;
 }
 
 @Injectable()
@@ -53,6 +54,7 @@ export class AuthGuard implements CanActivate {
       }
 
       request.user = user;
+      request.accessToken = token;
       return true;
     } catch {
       throw new UnauthorizedException('Invalid or expired token');

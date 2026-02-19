@@ -86,8 +86,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = useCallback(async () => {
     try {
-      const token = getCookie("access_token");
-      if (!token) {
+      // Check for auth_session indicator (non-sensitive cookie)
+      const hasSession = getCookie("auth_session");
+      if (!hasSession) {
         saveUserData(null);
         setIsLoading(false);
         return;
@@ -105,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Get current user profile from backend
+      // Get current user profile from backend (httpOnly cookie sent automatically)
       const profile = await profilesAPI.getMyProfile();
 
       if (profile) {
@@ -119,8 +120,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       logger.error("Auth check failed", error, { context: "checkAuth" });
-      // Clear invalid token
-      deleteCookie("access_token");
+      // Clear invalid session indicator
+      deleteCookie("auth_session");
       saveUserData(null);
     } finally {
       setIsLoading(false);
@@ -136,9 +137,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await authAPI.login({ email, password });
 
-      if (response.session?.access_token) {
-        // Save token to cookie only
-        setCookie("access_token", response.session.access_token, 7);
+      if (response.authenticated) {
+        // Backend has set httpOnly cookies, we just set a session indicator
+        setCookie("auth_session", "1", 7);
 
         // Use profile from login response (no second API call needed)
         const profile = response.profile;
@@ -148,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const userData = {
             id: profile.id,
             name: profile.full_name || "User",
-            email: response.session.user.email || profile.email || "",
+            email: profile.email || "",
             avatarUrl: profile.avatar_url || undefined,
           };
 
@@ -189,16 +190,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await authAPI.logout();
 
-      deleteCookie("access_token");
-      deleteCookie("refresh_token");
+      // Backend clears httpOnly cookies, we clear client-side indicators
+      deleteCookie("auth_session");
       saveUserData(null);
 
       toast.success(response.message || "Đã đăng xuất thành công!");
       router.push("/");
     } catch (error) {
       logger.error("Logout failed", error, { context: "logout" });
-      deleteCookie("access_token");
-      deleteCookie("refresh_token");
+      deleteCookie("auth_session");
       saveUserData(null);
       toast.error("Đăng xuất thất bại!");
       router.push("/");
@@ -207,8 +207,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      const token = getCookie("access_token");
-      if (!token) {
+      const hasSession = getCookie("auth_session");
+      if (!hasSession) {
         saveUserData(null);
         return;
       }
@@ -226,8 +226,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       logger.error("Failed to refresh user", error, { context: "refreshUser" });
-      deleteCookie("access_token");
-      deleteCookie("refresh_token");
+      deleteCookie("auth_session");
       saveUserData(null);
     }
   };

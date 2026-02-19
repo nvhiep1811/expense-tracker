@@ -44,6 +44,17 @@ export const authAPI = {
     return response.data;
   },
 
+  /**
+   * Set httpOnly session cookies via backend (used by OAuth callback)
+   */
+  setSession: async (accessToken: string, refreshToken?: string) => {
+    const response = await api.post("/auth/set-session", {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+    return response.data;
+  },
+
   getOAuthUrl: async (provider: "google" | "facebook") => {
     const response = await api.post("/auth/oauth", { provider });
     return response.data;
