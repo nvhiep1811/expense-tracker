@@ -109,6 +109,7 @@ export class RecurringRulesService extends BaseService {
       .update(dbData)
       .eq('id', ruleId)
       .eq('user_id', userId)
+      .is('deleted_at', null)
       .select()
       .single();
 

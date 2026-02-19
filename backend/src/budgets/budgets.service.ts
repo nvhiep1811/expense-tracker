@@ -1,4 +1,8 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { BaseService } from '../common/services/base.service';
 import { Budget } from '../common/types/entities';
@@ -70,6 +74,10 @@ export class BudgetsService extends BaseService {
     createData: CreateBudgetDto,
     accessToken: string,
   ): Promise<Budget> {
+    if (new Date(createData.end_date) <= new Date(createData.start_date)) {
+      throw new BadRequestException('Ngày kết thúc phải sau ngày bắt đầu.');
+    }
+
     const supabase = this.getAuthenticatedClient(accessToken);
     const { data, error } = await supabase
       .from('budgets')
@@ -93,6 +101,7 @@ export class BudgetsService extends BaseService {
       .update(updateData)
       .eq('id', budgetId)
       .eq('user_id', userId)
+      .is('deleted_at', null)
       .select()
       .single();
 

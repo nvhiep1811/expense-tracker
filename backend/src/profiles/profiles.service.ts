@@ -167,8 +167,11 @@ export class ProfilesService extends BaseService {
         throw new BadRequestException('Người dùng không hợp lệ.');
       }
 
-      // Verify current password bằng cách thử đăng nhập
-      const verifyClient = createClient(this.supabaseUrl, this.supabaseKey);
+      // Verify current password by attempting a sign-in with a lightweight,
+      // non-persisting client (avoids polluting any session state)
+      const verifyClient = createClient(this.supabaseUrl, this.supabaseKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
       const { error: signInError } = await verifyClient.auth.signInWithPassword(
         {
           email: user.email,
