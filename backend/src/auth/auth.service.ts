@@ -122,6 +122,24 @@ export class AuthService {
   }
 
   /**
+   * Refresh session using a refresh token
+   */
+  async refreshSession(refreshToken: string) {
+    const { data, error } = await this.supabase.auth.refreshSession({
+      refresh_token: refreshToken,
+    });
+
+    if (error || !data.session) {
+      this.logger.warn('Token refresh failed', error);
+      throw new UnauthorizedException(
+        'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+      );
+    }
+
+    return { session: data.session };
+  }
+
+  /**
    * Logout user - invalidates the JWT token via admin API if available
    */
   async logout(accessToken?: string) {
