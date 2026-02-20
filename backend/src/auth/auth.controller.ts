@@ -9,6 +9,7 @@ import {
   Headers,
   Res,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import { ConfigService } from '@nestjs/config';
@@ -41,7 +42,9 @@ export class AuthController {
     return {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax' as const,
+      // Production: cross-origin requests (frontend ≠ backend domain) require
+      // SameSite=None + Secure. Dev: Lax is fine for localhost.
+      sameSite: isProduction ? ('none' as const) : ('lax' as const),
       path: '/',
       maxAge: maxAgeDays * 24 * 60 * 60 * 1000, // Convert days to ms
     };
@@ -65,10 +68,11 @@ export class AuthController {
    * Helper: Clear auth cookies on response
    */
   private clearAuthCookies(res: Response) {
+    const isProduction = this.configService.get('NODE_ENV') === 'production';
     const clearOptions = {
       httpOnly: true,
-      secure: this.configService.get('NODE_ENV') === 'production',
-      sameSite: 'lax' as const,
+      secure: isProduction,
+      sameSite: isProduction ? ('none' as const) : ('lax' as const),
       path: '/',
     };
     res.clearCookie('access_token', clearOptions);
@@ -125,6 +129,38 @@ export class AuthController {
       ...safeResult,
       authenticated: !!session?.access_token,
     };
+  }
+
+  /**
+   * POST /auth/refresh
+   * Silently refresh access token using the httpOnly refresh_token cookie.
+   * Called automatically by the frontend axios interceptor on 401.
+   */
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  async refreshToken(
+    @Req() request: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = request.cookies?.refresh_token as string | undefined;
+    if (!refreshToken) {
+      throw new UnauthorizedException('Missing refresh token');
+    }
+
+    const { session } = await this.authService.refreshSession(refreshToken);
+
+    // Overwrite access_token cookie; also rotate refresh_token if Supabase issued a new one
+    res.cookie('access_token', session.access_token, this.getCookieOptions(7));
+    if (session.refresh_token) {
+      res.cookie(
+        'refresh_token',
+        session.refresh_token,
+        this.getCookieOptions(30),
+      );
+    }
+
+    return { authenticated: true, message: 'Token đã được làm mới.' };
   }
 
   /**
