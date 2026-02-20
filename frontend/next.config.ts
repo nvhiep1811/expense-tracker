@@ -1,5 +1,10 @@
 import type { NextConfig } from "next";
 
+// Derive API origin from env so CSP works in every environment
+const apiUrl =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+const apiOrigin = new URL(apiUrl).origin;
+
 const nextConfig: NextConfig = {
   // Image optimization
   images: {
@@ -54,7 +59,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self'",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co http://localhost:3001",
+              `connect-src 'self' https://*.supabase.co wss://*.supabase.co ${apiOrigin}`,
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
