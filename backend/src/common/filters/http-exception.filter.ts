@@ -17,6 +17,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let message = 'Internal server error';
     let errors: unknown = null;
 
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
@@ -32,13 +34,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message = exceptionResponse;
       }
     } else if (exception instanceof Error) {
-      message = exception.message;
+      message = isDevelopment ? exception.message : 'Internal server error';
       console.error('Unhandled error:', exception);
     }
 
     // Log 500 errors for debugging
     if (status === HttpStatus.INTERNAL_SERVER_ERROR) {
-      const isDevelopment = process.env.NODE_ENV !== 'production';
       if (isDevelopment) {
         console.error('Internal Server Error:', {
           message,

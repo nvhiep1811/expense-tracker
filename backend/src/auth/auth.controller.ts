@@ -10,10 +10,12 @@ import {
   Res,
   Req,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
+import { randomBytes } from 'crypto';
 import { AuthService } from './auth.service';
 import {
   CheckEmailDto,
@@ -26,6 +28,7 @@ import {
 } from './dto/auth.dto';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
+import { extractToken } from '../common/utils/token.utils';
 
 @Controller('auth')
 export class AuthController {
@@ -77,6 +80,7 @@ export class AuthController {
     };
     res.clearCookie('access_token', clearOptions);
     res.clearCookie('refresh_token', clearOptions);
+    this.clearCsrfCookie(res);
   }
 
   /**
@@ -121,6 +125,7 @@ export class AuthController {
         result.session.access_token,
         result.session.refresh_token,
       );
+      this.setCsrfCookie(res);
     }
 
     // Don't expose tokens in response body
@@ -159,6 +164,7 @@ export class AuthController {
         this.getCookieOptions(30),
       );
     }
+    this.setCsrfCookie(res);
 
     return { authenticated: true, message: 'Token đã được làm mới.' };
   }
@@ -169,14 +175,78 @@ export class AuthController {
    */
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard)
   async logout(
-    @Req() request: Request & { accessToken?: string },
+    @Req() request: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.logout(request.accessToken);
+    let accessToken: string | undefined;
+    try {
+      accessToken = extractToken(request);
+    } catch {
+      accessToken = undefined;
+    }
+
+    // Clear cookies immediately for faster perceived logout UX.
     this.clearAuthCookies(res);
-    return result;
+    void this.authService.logout(accessToken);
+
+    return { message: 'Đã đăng xuất thành công!' };
+  }
+
+  /**
+   * CSRF cookie is intentionally readable by frontend JS so it can be echoed
+   * in X-CSRF-Token header (double-submit cookie pattern).
+   */
+  private getCsrfCookieOptions(maxAgeDays: number = 30) {
+    const isProduction = this.configService.get('NODE_ENV') === 'production';
+    return {
+      httpOnly: false,
+      secure: isProduction,
+      sameSite: isProduction ? ('none' as const) : ('lax' as const),
+      path: '/',
+      maxAge: maxAgeDays * 24 * 60 * 60 * 1000,
+    };
+  }
+
+  private setCsrfCookie(res: Response) {
+    res.cookie(
+      'csrf_token',
+      randomBytes(32).toString('hex'),
+      this.getCsrfCookieOptions(30),
+    );
+  }
+
+  private clearCsrfCookie(res: Response) {
+    const isProduction = this.configService.get('NODE_ENV') === 'production';
+    res.clearCookie('csrf_token', {
+      httpOnly: false,
+      secure: isProduction,
+      sameSite: isProduction ? ('none' as const) : ('lax' as const),
+      path: '/',
+    });
+  }
+
+  private isTrustedOrigin(request: Request): boolean {
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const trustedOrigin = new URL(frontendUrl).origin;
+    const origin = request.headers.origin;
+    const referer = request.headers.referer;
+    const isProduction = this.configService.get('NODE_ENV') === 'production';
+
+    if (origin) {
+      return origin === trustedOrigin;
+    }
+
+    if (referer) {
+      try {
+        return new URL(referer).origin === trustedOrigin;
+      } catch {
+        return false;
+      }
+    }
+
+    return !isProduction;
   }
 
   /**
@@ -188,8 +258,14 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   async setSession(
     @Body() setSessionDto: SetSessionDto,
+    @Req() request: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
+    // Extra protection for login/session fixation CSRF.
+    if (!this.isTrustedOrigin(request)) {
+      throw new ForbiddenException('Invalid request origin');
+    }
+
     // Verify the token is valid before setting cookies
     const isValid = await this.authService.verifyToken(
       setSessionDto.access_token,
@@ -203,6 +279,7 @@ export class AuthController {
       setSessionDto.access_token,
       setSessionDto.refresh_token,
     );
+    this.setCsrfCookie(res);
 
     return { message: 'Session đã được thiết lập', authenticated: true };
   }

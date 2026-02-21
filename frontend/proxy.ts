@@ -5,6 +5,11 @@ const authRoutes = ["/login", "/register"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isProduction = process.env.NODE_ENV === "production";
+
+  if (pathname.startsWith("/auth/debug") && isProduction) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
 
   // Check for auth_session indicator (actual access_token is httpOnly)
   const hasSession = request.cookies.get("auth_session")?.value;
@@ -34,5 +39,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/dashboard/:path*", "/login", "/register"],
+  matcher: ["/", "/dashboard/:path*", "/login", "/register", "/auth/debug"],
 };
