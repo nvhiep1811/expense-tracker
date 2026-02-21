@@ -24,6 +24,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  isLoggingOut: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -50,6 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
 
   // Helper to save user data
@@ -187,21 +189,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    if (isLoggingOut) {
+      return;
+    }
+    setIsLoggingOut(true);
+
+    // Optimistic logout: clear local session immediately for snappy UX.
+    deleteCookie("auth_session");
+    saveUserData(null);
+    router.push("/");
+    router.refresh();
+
     try {
       const response = await authAPI.logout();
-
-      // Backend clears httpOnly cookies, we clear client-side indicators
-      deleteCookie("auth_session");
-      saveUserData(null);
-
       toast.success(response.message || "Đã đăng xuất thành công!");
-      router.push("/");
     } catch (error) {
       logger.error("Logout failed", error, { context: "logout" });
-      deleteCookie("auth_session");
-      saveUserData(null);
-      toast.error("Đăng xuất thất bại!");
-      router.push("/");
+      // User is already logged out locally; do not block UX with an error toast.
+      toast.success("Đã đăng xuất.");
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -270,6 +277,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isLoading,
+        isLoggingOut,
         login,
         register,
         logout,

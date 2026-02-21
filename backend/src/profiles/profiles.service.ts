@@ -18,17 +18,28 @@ export class ProfilesService extends BaseService {
     super(configService);
   }
 
-  async getProfile(userId: string, accessToken: string): Promise<Profile> {
+  async getProfile(
+    userId: string,
+    accessToken: string,
+    userEmail?: string,
+  ): Promise<Profile> {
     const supabase = this.getAuthenticatedClient(accessToken);
+    let email = userEmail;
+    let avatarUrl: string | null = null;
 
-    // Get user email from auth.users first
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    // Fallback only when email claim is not present in access token.
+    if (!email) {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-    if (userError) {
-      this.logger.warn('Could not fetch user email', userError);
+      if (userError) {
+        this.logger.warn('Could not fetch user email', userError);
+      } else {
+        email = user?.email || undefined;
+        avatarUrl = user?.user_metadata?.avatar_url || null;
+      }
     }
 
     // Get profile data - use maybeSingle to handle case when no profile exists
@@ -45,8 +56,7 @@ export class ProfilesService extends BaseService {
     // If no profile exists, create one with defaults
     if (!profileData) {
       this.logger.log(`Creating missing profile for user ${userId}`);
-      const userName = user?.email ? user.email.split('@')[0] : 'Người dùng';
-      const avatarUrl = user?.user_metadata?.avatar_url || null;
+      const userName = email ? email.split('@')[0] : 'Người dùng';
 
       const { data: newProfile, error: createError } = await supabase
         .from('profiles')
@@ -68,14 +78,14 @@ export class ProfilesService extends BaseService {
 
       return {
         ...newProfile,
-        email: user?.email || undefined,
+        email,
       } as Profile;
     }
 
     // Combine profile data with email
     return {
       ...profileData,
-      email: user?.email || undefined,
+      email,
     } as Profile;
   }
 
@@ -99,28 +109,10 @@ export class ProfilesService extends BaseService {
   async changeEmail(
     userId: string,
     changeEmailDto: ChangeEmailDto,
-    accessToken: string,
+    _accessToken: string,
   ): Promise<{ message: string }> {
     try {
       const supabaseAdmin = this.getAdminClient();
-
-      // Verify user bằng access token
-      const {
-        data: { user },
-        error: userError,
-      } = await supabaseAdmin.auth.getUser(accessToken);
-
-      if (userError || !user) {
-        this.logger.error('Error verifying user', userError);
-        throw new BadRequestException(
-          'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.',
-        );
-      }
-
-      // Verify userId khớp với user từ token
-      if (user.id !== userId) {
-        throw new BadRequestException('Unauthorized');
-      }
 
       // Update email bằng Admin API
       const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
@@ -151,20 +143,26 @@ export class ProfilesService extends BaseService {
   }
 
   async changePassword(
+    userId: string,
+    userEmail: string | undefined,
     changePasswordDto: ChangePasswordDto,
     accessToken: string,
   ): Promise<{ message: string }> {
     try {
       const supabaseAdmin = this.getAdminClient();
+      let email = userEmail;
 
-      // Verify user và lấy thông tin
-      const {
-        data: { user },
-        error: userError,
-      } = await supabaseAdmin.auth.getUser(accessToken);
+      if (!email) {
+        const verifyClient = this.getAuthenticatedClient(accessToken);
+        const {
+          data: { user },
+          error: userError,
+        } = await verifyClient.auth.getUser();
 
-      if (userError || !user || !user.email) {
-        throw new BadRequestException('Người dùng không hợp lệ.');
+        if (userError || !user?.email) {
+          throw new BadRequestException('Người dùng không hợp lệ.');
+        }
+        email = user.email;
       }
 
       // Verify current password by attempting a sign-in with a lightweight,
@@ -174,7 +172,7 @@ export class ProfilesService extends BaseService {
       });
       const { error: signInError } = await verifyClient.auth.signInWithPassword(
         {
-          email: user.email,
+          email,
           password: changePasswordDto.current_password,
         },
       );
@@ -185,7 +183,7 @@ export class ProfilesService extends BaseService {
 
       // Update password bằng Admin API
       const { error: updateError } =
-        await supabaseAdmin.auth.admin.updateUserById(user.id, {
+        await supabaseAdmin.auth.admin.updateUserById(userId, {
           password: changePasswordDto.new_password,
         });
 

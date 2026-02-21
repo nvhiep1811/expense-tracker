@@ -13,7 +13,7 @@ export default function Header({
   title: string;
   subtitle?: string;
 }) {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoggingOut } = useAuth();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -60,7 +60,8 @@ export default function Header({
             </div>
             <button
               onClick={logout}
-              className="p-2 text-muted-text hover:text-red-600 dark:hover:text-red-400 transition cursor-pointer"
+              disabled={isLoggingOut}
+              className="p-2 text-muted-text hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:text-red-400 transition cursor-pointer"
               title="Đăng xuất"
             >
               <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />

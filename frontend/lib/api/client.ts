@@ -15,6 +15,19 @@ const api = axios.create({
   withCredentials: true, // Automatically send httpOnly cookies
 });
 
+function getCookieValue(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const prefix = `${name}=`;
+  const parts = document.cookie.split(";");
+  for (const part of parts) {
+    const cookie = part.trim();
+    if (cookie.startsWith(prefix)) {
+      return decodeURIComponent(cookie.slice(prefix.length));
+    }
+  }
+  return null;
+}
+
 // ─── Token refresh state ────────────────────────────────────────────────────
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -44,6 +57,20 @@ function clearSession() {
     window.location.href = "/login";
   }
 }
+
+// Request interceptor: attach CSRF header for state-changing requests.
+api.interceptors.request.use((config) => {
+  const method = (config.method || "GET").toUpperCase();
+  const needsCsrf = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+  if (!needsCsrf) return config;
+
+  const csrfToken = getCookieValue("csrf_token");
+  if (!csrfToken) return config;
+
+  config.headers = config.headers || {};
+  config.headers["X-CSRF-Token"] = csrfToken;
+  return config;
+});
 // ────────────────────────────────────────────────────────────────────────────
 
 // Response interceptor: auto-refresh access token on 401, then retry
@@ -58,8 +85,15 @@ api.interceptors.response.use(
     // Don't attempt refresh if this request IS the refresh call, or already retried
     const isRefreshCall = originalConfig.url?.includes("/auth/refresh");
     const isLoginCall = originalConfig.url?.includes("/auth/login");
+    const isLogoutCall = originalConfig.url?.includes("/auth/logout");
 
-    if (is401 && !originalConfig._retry && !isRefreshCall && !isLoginCall) {
+    if (
+      is401 &&
+      !originalConfig._retry &&
+      !isRefreshCall &&
+      !isLoginCall &&
+      !isLogoutCall
+    ) {
       if (isRefreshing) {
         // Queue concurrent requests while a refresh is in progress
         return new Promise((resolve, reject) => {

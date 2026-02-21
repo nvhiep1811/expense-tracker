@@ -143,21 +143,34 @@ export class AuthService {
    * Logout user - invalidates the JWT token via admin API if available
    */
   async logout(accessToken?: string) {
-    // Use admin API to actually revoke the session (prevents token reuse after logout)
+    const revokeTimeoutMs =
+      this.configService.get<number>('AUTH_LOGOUT_REVOKE_TIMEOUT_MS') ?? 800;
+
+    // Best-effort revoke with timeout so logout UX is not blocked by auth network latency.
     if (accessToken && this.supabaseAdmin) {
       try {
-        await this.supabaseAdmin.auth.admin.signOut(accessToken);
-      } catch (adminError) {
-        this.logger.warn('Admin signOut failed, falling back', adminError);
-        // Fall back to anon signOut (clears in-memory session only)
-        await this.supabase.auth.signOut();
+        await Promise.race([
+          this.supabaseAdmin.auth.admin.signOut(accessToken),
+          new Promise((_, reject) =>
+            setTimeout(
+              () => reject(new Error('Revoke session timeout')),
+              revokeTimeoutMs,
+            ),
+          ),
+        ]);
+      } catch (error) {
+        this.logger.warn('Logout revoke skipped or timed out', error);
       }
-    } else {
-      // No admin client or no token - anon signOut (best-effort)
+    }
+
+    // Local signOut is best-effort and should not fail logout flow.
+    try {
       const { error } = await this.supabase.auth.signOut();
       if (error) {
         this.logger.warn('Logout signOut error', error);
       }
+    } catch (error) {
+      this.logger.warn('Logout local signOut exception', error);
     }
 
     return {
@@ -262,11 +275,8 @@ export class AuthService {
    */
   async verifyToken(accessToken: string): Promise<boolean> {
     try {
-      const {
-        data: { user },
-        error,
-      } = await this.supabase.auth.getUser(accessToken);
-      return !error && !!user;
+      const { data, error } = await this.supabase.auth.getClaims(accessToken);
+      return !error && !!data?.claims?.sub;
     } catch {
       return false;
     }

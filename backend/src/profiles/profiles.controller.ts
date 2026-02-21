@@ -31,7 +31,7 @@ export class ProfilesController {
     @Req() request: Request,
   ): Promise<Profile> {
     const token = extractToken(request);
-    return this.profilesService.getProfile(user.id, token);
+    return this.profilesService.getProfile(user.id, token, user.email);
   }
 
   @Put('me')
@@ -56,11 +56,17 @@ export class ProfilesController {
 
   @Post('change-password')
   async changePassword(
+    @CurrentUser() user: User,
     @Body() changePasswordDto: ChangePasswordDto,
     @Req() request: Request,
   ): Promise<{ message: string }> {
     const token = extractToken(request);
-    return this.profilesService.changePassword(changePasswordDto, token);
+    return this.profilesService.changePassword(
+      user.id,
+      user.email,
+      changePasswordDto,
+      token,
+    );
   }
 
   @Post('upload-avatar')
