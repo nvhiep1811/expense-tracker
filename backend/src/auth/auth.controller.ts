@@ -209,11 +209,9 @@ export class AuthController {
   }
 
   private setCsrfCookie(res: Response) {
-    res.cookie(
-      'csrf_token',
-      randomBytes(32).toString('hex'),
-      this.getCsrfCookieOptions(30),
-    );
+    const token = randomBytes(32).toString('hex');
+    res.cookie('csrf_token', token, this.getCsrfCookieOptions(30));
+    res.setHeader('X-CSRF-Token', token);
   }
 
   private clearCsrfCookie(res: Response) {
@@ -224,6 +222,7 @@ export class AuthController {
       sameSite: isProduction ? ('none' as const) : ('lax' as const),
       path: '/',
     });
+    res.removeHeader('X-CSRF-Token');
   }
 
   private isTrustedOrigin(request: Request): boolean {

@@ -41,6 +41,10 @@ function tokensMatch(cookieToken: string, headerToken: string): boolean {
   return timingSafeEqual(cookieBuf, headerBuf);
 }
 
+function setCsrfResponseHeader(response: Response, token: string): void {
+  response.setHeader('X-CSRF-Token', token);
+}
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -61,10 +65,34 @@ async function bootstrap() {
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-CSRF-Token',
+      'Cache-Control',
+      'Pragma',
+      'Expires',
+    ],
+    exposedHeaders: ['X-CSRF-Token'],
   });
 
   // CSRF protection for cookie-authenticated state-changing requests.
   app.use((request: Request, response: Response, next: NextFunction) => {
+    const hasSessionCookie = Boolean(
+      request.cookies?.access_token || request.cookies?.refresh_token,
+    );
+
+    let csrfCookieToken = getCsrfCookieToken(request);
+    if (hasSessionCookie && !csrfCookieToken) {
+      // Initialize CSRF token for pre-existing sessions created before rollout.
+      csrfCookieToken = randomBytes(32).toString('hex');
+      response.cookie('csrf_token', csrfCookieToken, buildCookieOptions());
+    }
+
+    if (hasSessionCookie && csrfCookieToken) {
+      setCsrfResponseHeader(response, csrfCookieToken);
+    }
+
     const method = request.method.toUpperCase();
     if (['GET', 'HEAD', 'OPTIONS'].includes(method)) {
       return next();
@@ -83,22 +111,16 @@ async function bootstrap() {
       return next();
     }
 
-    const hasSessionCookie = Boolean(
-      request.cookies?.access_token || request.cookies?.refresh_token,
-    );
     if (!hasSessionCookie) {
       return next();
     }
 
-    const csrfCookieToken = getCsrfCookieToken(request);
     if (!csrfCookieToken) {
-      // Backward-compatible bootstrap for existing sessions created before CSRF rollout.
-      response.cookie(
-        'csrf_token',
-        randomBytes(32).toString('hex'),
-        buildCookieOptions(),
-      );
-      return next();
+      return response.status(403).json({
+        statusCode: 403,
+        message: 'Missing CSRF token',
+        timestamp: new Date().toISOString(),
+      });
     }
 
     const csrfHeaderToken = getCsrfHeaderToken(request);
