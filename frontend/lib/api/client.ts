@@ -8,12 +8,11 @@ const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    Pragma: "no-cache",
-    Expires: "0",
   },
   withCredentials: true, // Automatically send httpOnly cookies
 });
+
+let csrfTokenMemory: string | null = null;
 
 function getCookieValue(name: string): string | null {
   if (typeof document === "undefined") return null;
@@ -26,6 +25,16 @@ function getCookieValue(name: string): string | null {
     }
   }
   return null;
+}
+
+function updateCsrfTokenFromHeaders(
+  headers: Record<string, unknown> | undefined,
+): void {
+  if (!headers) return;
+  const token = headers["x-csrf-token"];
+  if (typeof token === "string" && token) {
+    csrfTokenMemory = token;
+  }
 }
 
 // ─── Token refresh state ────────────────────────────────────────────────────
@@ -64,7 +73,7 @@ api.interceptors.request.use((config) => {
   const needsCsrf = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
   if (!needsCsrf) return config;
 
-  const csrfToken = getCookieValue("csrf_token");
+  const csrfToken = csrfTokenMemory || getCookieValue("csrf_token");
   if (!csrfToken) return config;
 
   config.headers = config.headers || {};
@@ -75,11 +84,16 @@ api.interceptors.request.use((config) => {
 
 // Response interceptor: auto-refresh access token on 401, then retry
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    updateCsrfTokenFromHeaders(response.headers);
+    return response;
+  },
   async (error) => {
     const originalConfig = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
     };
+
+    updateCsrfTokenFromHeaders(error?.response?.headers);
 
     const is401 = error.response?.status === 401;
     // Don't attempt refresh if this request IS the refresh call, or already retried
@@ -111,6 +125,7 @@ api.interceptors.response.use(
         return api.request(originalConfig); // retry original request
       } catch (refreshError) {
         processQueue(refreshError);
+        csrfTokenMemory = null;
         clearSession();
         return Promise.reject(refreshError);
       } finally {
